@@ -7,7 +7,6 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Matching } from 'src/utils/decorators';
 
 export class RegisterAuthDto {
   @IsEmail()
@@ -26,24 +25,18 @@ export class RegisterAuthDto {
         'Password must contain at least 1 number, 1 uppercase character and 1 special character',
     },
   )
-  @MinLength(8)
+  @MinLength(5)
   @IsString()
   @ApiProperty()
   password: string;
 
-  @Matching<RegisterAuthDto>('password')
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  confirmPassword: string;
-
-  @MaxLength(20)
+  @MaxLength(50)
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
   firstName: string;
 
-  @MaxLength(20)
+  @MaxLength(50)
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
