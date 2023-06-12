@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -12,10 +12,11 @@ import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.fi
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
+    UsersModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [
-    AppService,
     {
       provide: APP_FILTER,
       useClass: PrismaClientExceptionFilter,
