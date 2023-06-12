@@ -8,7 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class RegisterAuthDto {
+export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty()
