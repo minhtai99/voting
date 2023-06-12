@@ -19,6 +19,8 @@ export class CreateUserDto {
       minNumbers: 1,
       minUppercase: 1,
       minSymbols: 1,
+      minLength: 5,
+      minLowercase: 1,
     },
     {
       message:
