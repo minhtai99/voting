@@ -21,11 +21,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  private static extractJWT(req: Request): string | null {
-    if (req.cookies && 'AccessToken' in req.cookies) {
-      return req.cookies.AccessToken;
-    }
-    return null;
+  private static extractJWT(req: Request): string | undefined {
+    const [type, token] = req.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 
   async validate(payload: { id: number; email: string }) {

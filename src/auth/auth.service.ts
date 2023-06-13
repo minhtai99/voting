@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { Request } from 'express';
@@ -66,23 +67,16 @@ export class AuthService {
     };
 
     const accessToken = await this.createJWT(payload, TokenType.ACCESS);
-    this.setCookie('AccessToken', accessToken, req);
-
     if (isRemember) {
       const refreshToken = await this.createJWT(payload, TokenType.REFRESH);
       await this.usersService.updateRefreshToken(foundUser.id, refreshToken);
-
       this.setCookie('RefreshToken', refreshToken, req);
-      return {
-        message: MSG_LOGIN_SUCCESSFUL,
-        accessToken,
-        refreshToken,
-      };
     }
 
     return {
       message: MSG_LOGIN_SUCCESSFUL,
-      accessToken,
+      AccessToken: accessToken,
+      user: foundUser,
     };
   }
 
@@ -95,44 +89,51 @@ export class AuthService {
   }
 
   async refreshToken(req: Request) {
-    if (req.cookies && 'RefreshToken' in req.cookies) {
-      const refreshToken = req.cookies.RefreshToken;
-      const user = await this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('SECRET_REFRESH_JWT'),
-      });
-
-      const foundUser = await this.usersService.foundUserByEmail(user.email);
-      if (!foundUser) {
-        throw new NotFoundException(MSG_USER_NOT_FOUND);
-      }
-
-      const isMatch = await compareHashedData(
-        refreshToken,
-        foundUser.refreshTokenHash,
-      );
-      if (!isMatch) {
-        throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
-      }
-
-      const payload: JwtPayload = {
-        id: foundUser.id,
-        email: foundUser.email,
-      };
-      const newAccessToken = await this.createJWT(payload, TokenType.ACCESS);
-      const newRefreshToken = await this.createJWT(payload, TokenType.REFRESH);
-
-      await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
-
-      this.setCookie('AccessToken', newAccessToken, req);
-      this.setCookie('RefreshToken', newRefreshToken, req);
-      return {
-        message: MSG_REFRESH_TOKEN_SUCCESSFUL,
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      };
-    } else {
+    if (!req.cookies.RefreshToken) {
       throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
     }
+    const refreshToken = req.cookies.RefreshToken;
+
+    const isVerify = await this.verifyToken(refreshToken, TokenType.REFRESH);
+    if (!isVerify) {
+      throw new UnauthorizedException();
+    }
+
+    const foundUser = await this.usersService.foundUserByEmail(isVerify.email);
+    if (!foundUser) {
+      throw new NotFoundException(MSG_USER_NOT_FOUND);
+    }
+
+    const isMatch = await compareHashedData(
+      refreshToken,
+      foundUser.refreshTokenHash,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
+    }
+
+    const payload: JwtPayload = {
+      id: foundUser.id,
+      email: foundUser.email,
+    };
+    const newAccessToken = await this.createJWT(payload, TokenType.ACCESS);
+    const newRefreshToken = await this.createJWT(payload, TokenType.REFRESH);
+
+    await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
+
+    this.setCookie('AccessToken', newAccessToken, req);
+    this.setCookie('RefreshToken', newRefreshToken, req);
+    return {
+      message: MSG_REFRESH_TOKEN_SUCCESSFUL,
+      AccessToken: newAccessToken,
+      user: foundUser,
+    };
+  }
+
+  async verifyToken(refreshToken: string, typeToken: TokenType) {
+    return await this.jwtService.verify(refreshToken, {
+      secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+    });
   }
 
   async createJWT(payload: JwtPayload, typeToken: TokenType) {

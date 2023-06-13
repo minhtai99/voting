@@ -28,6 +28,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseInterceptors(ClassSerializerInterceptor)
   login(@Body() loginAuthDto: LoginAuthDto, @Req() req: Request) {
     return this.authService.login(loginAuthDto, req);
   }
@@ -39,6 +40,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UseInterceptors(ClassSerializerInterceptor)
   async refreshTokens(@Req() req: Request) {
     return this.authService.refreshToken(req);
   }
