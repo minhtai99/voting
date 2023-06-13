@@ -7,6 +7,13 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { compareHashedData } from 'src/helpers/hash.helper';
 import { TokenType } from './auth.enum';
+import {
+  MSG_EMAIL_ALREADY_EXISTS,
+  MSG_EMAIL_NOT_EXISTED,
+  MSG_LOGIN_SUCCESSFUL,
+  MSG_REGISTER_SUCCESSFUL,
+  MSG_WRONG_PASSWORD,
+} from 'src/constants/message.constant';
 
 type JwtPayload = {
   sub: number;
@@ -23,11 +30,11 @@ export class AuthService {
   async register(register: CreateUserDto) {
     const foundUser = await this.usersService.foundUserByEmail(register.email);
     if (foundUser) {
-      throw new BadRequestException('Email is already registered');
+      throw new BadRequestException(MSG_EMAIL_ALREADY_EXISTS);
     }
 
     return {
-      message: 'Account created successfully!',
+      message: MSG_REGISTER_SUCCESSFUL,
       data: await this.usersService.create(register),
     };
   }
@@ -36,12 +43,12 @@ export class AuthService {
     const { email, password, isRemember } = loginAuthDto;
     const foundUser = await this.usersService.foundUserByEmail(email);
     if (!foundUser) {
-      throw new BadRequestException('Email not existed');
+      throw new BadRequestException(MSG_EMAIL_NOT_EXISTED);
     }
 
     const isMatch = await compareHashedData(password, foundUser.password);
     if (!isMatch) {
-      throw new BadRequestException('Your email/password is incorrect');
+      throw new BadRequestException(MSG_WRONG_PASSWORD);
     }
 
     const payload: JwtPayload = {
@@ -58,31 +65,23 @@ export class AuthService {
 
       this.setCookie('refreshToken', refreshToken, req);
       return {
-        message: 'Logged in successfully',
+        message: MSG_LOGIN_SUCCESSFUL,
         accessToken,
         refreshToken,
       };
     }
 
     return {
-      message: 'Logged in successfully',
+      message: MSG_LOGIN_SUCCESSFUL,
       accessToken,
     };
   }
 
   async createJWT(payload: JwtPayload, typeToken: TokenType) {
-    if (typeToken === 'ACCESS') {
-      return this.jwtService.signAsync(payload, {
-        secret: this.configService.get('SECRET_ACCESS_JWT'),
-        expiresIn: this.configService.get('EXPIRE_ACCESS_JWT'),
-      });
-    }
-    if (typeToken === 'REFRESH') {
-      return this.jwtService.signAsync(payload, {
-        secret: this.configService.get('SECRET_REFRESH_JWT'),
-        expiresIn: this.configService.get('EXPIRE_REFRESH_JWT'),
-      });
-    }
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+      expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
+    });
   }
 
   setCookie(key: string, value: string, req: Request) {
