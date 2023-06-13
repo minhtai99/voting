@@ -16,6 +16,18 @@ export class UsersService {
     return new UserDto(newUser);
   }
 
+  async updateRefreshToken(uid: number, refresh_token: string) {
+    const refreshTokenHash = await hashData(refresh_token);
+    await this.prisma.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        refreshTokenHash,
+      },
+    });
+  }
+
   async foundUserByEmail(email: string) {
     const foundUser = await this.prisma.user.findUnique({
       where: {
