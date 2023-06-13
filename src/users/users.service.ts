@@ -16,8 +16,8 @@ export class UsersService {
     return new UserDto(newUser);
   }
 
-  async updateRefreshToken(userId: number, refreshToken: string) {
-    const refreshTokenHash = await hashData(refreshToken);
+  async updateRefreshToken(userId: number, refreshToken?: string | null) {
+    const refreshTokenHash = refreshToken ? await hashData(refreshToken) : null;
     await this.prisma.user.update({
       where: {
         id: userId,
@@ -34,6 +34,6 @@ export class UsersService {
         email,
       },
     });
-    return foundUser;
+    return new UserDto(foundUser);
   }
 }
