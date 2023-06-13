@@ -16,11 +16,11 @@ export class UsersService {
     return new UserDto(newUser);
   }
 
-  async updateRefreshToken(uid: number, refresh_token: string) {
-    const refreshTokenHash = await hashData(refresh_token);
+  async updateRefreshToken(userId: number, refreshToken: string) {
+    const refreshTokenHash = await hashData(refreshToken);
     await this.prisma.user.update({
       where: {
-        id: uid,
+        id: userId,
       },
       data: {
         refreshTokenHash,

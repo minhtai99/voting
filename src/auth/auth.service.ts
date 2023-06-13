@@ -2,17 +2,16 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from './../users/users.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
-import { compareData } from 'src/helpers/compare.helper';
-import { Response } from 'express';
+import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { compareHashedData } from 'src/helpers/hash.helper';
+import { TokenType } from './auth.enum';
 
 type JwtPayload = {
   sub: number;
   email: string;
 };
-
-type TypeToken = 'ACCESS' | 'REFRESH' | 'RESET_PASS';
 
 @Injectable()
 export class AuthService {
@@ -33,14 +32,14 @@ export class AuthService {
     };
   }
 
-  async login(loginAuthDto: LoginAuthDto, res: Response) {
+  async login(loginAuthDto: LoginAuthDto, req: Request) {
     const { email, password, isRemember } = loginAuthDto;
     const foundUser = await this.usersService.foundUserByEmail(email);
     if (!foundUser) {
-      throw new BadRequestException('Your email/password is incorrect');
+      throw new BadRequestException('Email not existed');
     }
 
-    const isMatch = await compareData(password, foundUser.password);
+    const isMatch = await compareHashedData(password, foundUser.password);
     if (!isMatch) {
       throw new BadRequestException('Your email/password is incorrect');
     }
@@ -50,28 +49,28 @@ export class AuthService {
       email: foundUser.email,
     };
 
-    const access_token = await this.createJWT(payload, 'ACCESS');
-    this.setCookie('access_token', access_token, res);
+    const accessToken = await this.createJWT(payload, TokenType.ACCESS);
+    this.setCookie('accessToken', accessToken, req);
 
     if (isRemember) {
-      const refresh_token = await this.createJWT(payload, 'REFRESH');
-      await this.usersService.updateRefreshToken(foundUser.id, refresh_token);
+      const refreshToken = await this.createJWT(payload, TokenType.REFRESH);
+      await this.usersService.updateRefreshToken(foundUser.id, refreshToken);
 
-      this.setCookie('refresh_token', refresh_token, res);
-      return res.send({
+      this.setCookie('refreshToken', refreshToken, req);
+      return {
         message: 'Logged in successfully',
-        access_token,
-        refresh_token,
-      });
+        accessToken,
+        refreshToken,
+      };
     }
 
-    return res.send({
+    return {
       message: 'Logged in successfully',
-      access_token,
-    });
+      accessToken,
+    };
   }
 
-  async createJWT(payload: JwtPayload, typeToken: TypeToken) {
+  async createJWT(payload: JwtPayload, typeToken: TokenType) {
     if (typeToken === 'ACCESS') {
       return this.jwtService.signAsync(payload, {
         secret: this.configService.get('SECRET_ACCESS_JWT'),
@@ -86,9 +85,9 @@ export class AuthService {
     }
   }
 
-  setCookie(key: string, value: string, res: Response) {
+  setCookie(key: string, value: string, req: Request) {
     const frontendDomain = this.configService.get('FRONTEND_DOMAIN');
-    res.cookie(key, value, {
+    req.res.cookie(key, value, {
       httpOnly: true,
       domain: frontendDomain,
     });

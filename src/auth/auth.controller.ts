@@ -2,15 +2,15 @@ import {
   Controller,
   Post,
   Body,
-  Res,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
-import { Response } from 'express';
+import { Request } from 'express';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -24,7 +24,7 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() loginAuthDto: LoginAuthDto, @Res() res: Response) {
-    return this.authService.login(loginAuthDto, res);
+  login(@Body() loginAuthDto: LoginAuthDto, @Req() req: Request) {
+    return this.authService.login(loginAuthDto, req);
   }
 }
