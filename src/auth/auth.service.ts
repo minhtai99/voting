@@ -94,9 +94,9 @@ export class AuthService {
     }
     const refreshToken = req.cookies.RefreshToken;
 
-    const isVerify = await this.verifyToken(refreshToken, TokenType.REFRESH);
+    const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
 
-    const foundUser = await this.usersService.foundUserByEmail(isVerify.email);
+    const foundUser = await this.usersService.foundUserByEmail(payload.email);
     if (!foundUser) {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
@@ -109,11 +109,11 @@ export class AuthService {
       throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
     }
 
-    const payload: JwtPayload = {
+    const jwtPayload: JwtPayload = {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const newAccessToken = await this.createJWT(payload, TokenType.ACCESS);
+    const newAccessToken = await this.createJWT(jwtPayload, TokenType.ACCESS);
     const newRefreshToken = await this.createJWT(payload, TokenType.REFRESH);
 
     await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
