@@ -121,7 +121,6 @@ export class AuthService {
 
     await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
 
-    this.setCookie('AccessToken', newAccessToken, req);
     this.setCookie('RefreshToken', newRefreshToken, req);
     return {
       message: MSG_REFRESH_TOKEN_SUCCESSFUL,
