@@ -4,7 +4,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { Request } from 'express';
@@ -16,6 +15,7 @@ import {
   MSG_EMAIL_ALREADY_EXISTS,
   MSG_EMAIL_NOT_EXISTED,
   MSG_INVALID_REFRESH_TOKEN,
+  MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
   MSG_REFRESH_TOKEN_SUCCESSFUL,
@@ -95,9 +95,6 @@ export class AuthService {
     const refreshToken = req.cookies.RefreshToken;
 
     const isVerify = await this.verifyToken(refreshToken, TokenType.REFRESH);
-    if (!isVerify) {
-      throw new UnauthorizedException();
-    }
 
     const foundUser = await this.usersService.foundUserByEmail(isVerify.email);
     if (!foundUser) {
@@ -130,9 +127,13 @@ export class AuthService {
   }
 
   async verifyToken(refreshToken: string, typeToken: TokenType) {
-    return await this.jwtService.verify(refreshToken, {
-      secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-    });
+    try {
+      return await this.jwtService.verify(refreshToken, {
+        secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+      });
+    } catch {
+      throw new BadRequestException(MSG_INVALID_TOKEN);
+    }
   }
 
   async createJWT(payload: JwtPayload, typeToken: TokenType) {

@@ -9,3 +9,4 @@ export const MSG_EMAIL_NOT_EXISTED = 'Email not existed';
 export const MSG_EMAIL_ALREADY_EXISTS = 'Email is already registered';
 export const MSG_USER_NOT_FOUND = 'User not found';
 export const MSG_INVALID_REFRESH_TOKEN = 'Invalid token refresh';
+export const MSG_INVALID_TOKEN = 'Invalid token';
