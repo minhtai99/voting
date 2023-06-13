@@ -27,4 +27,7 @@ export class UserDto implements User {
 
   @ApiProperty()
   lastName: string;
+
+  @Exclude()
+  refreshTokenHash: string;
 }
