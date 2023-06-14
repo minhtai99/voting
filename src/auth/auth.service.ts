@@ -14,6 +14,7 @@ import { TokenType } from './auth.enum';
 import {
   MSG_EMAIL_ALREADY_EXISTS,
   MSG_EMAIL_NOT_EXISTED,
+  MSG_ERROR_CREATE_TOKEN,
   MSG_INVALID_REFRESH_TOKEN,
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
@@ -51,7 +52,7 @@ export class AuthService {
 
     return {
       message: MSG_REGISTER_SUCCESSFUL,
-      data: await this.usersService.create(register),
+      data: new UserDto(await this.usersService.create(register)),
     };
   }
 
@@ -69,9 +70,9 @@ export class AuthService {
       email: foundUser.email,
     };
 
-    const accessToken = await this.createJWT(payload, TokenType.ACCESS);
+    const accessToken = this.createJWT(payload, TokenType.ACCESS);
     if (isRemember) {
-      const refreshToken = await this.createJWT(payload, TokenType.REFRESH);
+      const refreshToken = this.createJWT(payload, TokenType.REFRESH);
       await this.usersService.updateRefreshToken(foundUser.id, refreshToken);
       this.setCookie('RefreshToken', refreshToken, req);
     }
@@ -79,7 +80,7 @@ export class AuthService {
     return {
       message: MSG_LOGIN_SUCCESSFUL,
       AccessToken: accessToken,
-      user: foundUser,
+      user: new UserDto(foundUser),
     };
   }
 
@@ -110,8 +111,8 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const newAccessToken = await this.createJWT(jwtPayload, TokenType.ACCESS);
-    const newRefreshToken = await this.createJWT(payload, TokenType.REFRESH);
+    const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
+    const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
 
     await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
 
@@ -119,7 +120,7 @@ export class AuthService {
     return {
       message: MSG_REFRESH_TOKEN_SUCCESSFUL,
       AccessToken: newAccessToken,
-      user: foundUser,
+      user: new UserDto(foundUser),
     };
   }
 
@@ -133,7 +134,7 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const resetPassJwt = await this.createJWT(payload, TokenType.RESET_PASS);
+    const resetPassJwt = this.createJWT(payload, TokenType.RESET_PASS);
     await this.usersService.updateResetPasswordHash(foundUser.id, resetPassJwt);
     const forgotPassPayload: MailForgotPassPayload = {
       receiver: foundUser,
@@ -172,11 +173,15 @@ export class AuthService {
     }
   }
 
-  async createJWT(payload: JwtPayload, typeToken: TokenType) {
-    return this.jwtService.signAsync(payload, {
-      secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-      expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
-    });
+  createJWT(payload: JwtPayload, typeToken: TokenType) {
+    try {
+      return this.jwtService.sign(payload, {
+        secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+        expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
+      });
+    } catch {
+      throw new BadRequestException(MSG_ERROR_CREATE_TOKEN);
+    }
   }
 
   setCookie(key: string, value: string, req: Request) {

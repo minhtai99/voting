@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { hashData } from 'src/helpers/hash.helper';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -13,7 +12,7 @@ export class UsersService {
     const newUser = await this.prisma.user.create({
       data: register,
     });
-    return new UserDto(newUser);
+    return newUser;
   }
 
   async updateRefreshToken(userId: number, refreshToken?: string | null) {
@@ -59,6 +58,6 @@ export class UsersService {
         email,
       },
     });
-    return new UserDto(foundUser);
+    return foundUser;
   }
 }

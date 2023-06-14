@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseInterceptors,
-  ClassSerializerInterceptor,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
@@ -24,13 +16,11 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @UseInterceptors(ClassSerializerInterceptor)
   register(@Body() register: CreateUserDto) {
     return this.authService.register(register);
   }
 
   @Post('login')
-  @UseInterceptors(ClassSerializerInterceptor)
   login(@Body() loginAuthDto: LoginAuthDto, @Req() req: Request) {
     return this.authService.login(loginAuthDto, req);
   }
@@ -42,7 +32,6 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseInterceptors(ClassSerializerInterceptor)
   async refreshTokens(@Req() req: Request) {
     return this.authService.refreshToken(req);
   }
@@ -53,7 +42,6 @@ export class AuthController {
   }
 
   @Post('reset-password')
-  @UseInterceptors(ClassSerializerInterceptor)
   resetPassword(@Body() body: ResetPassDto) {
     return this.authService.resetPassword(body);
   }
