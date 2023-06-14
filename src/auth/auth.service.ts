@@ -124,6 +124,9 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const foundUser = await this.usersService.foundUserByEmail(email);
+    if (!foundUser) {
+      throw new NotFoundException(MSG_USER_NOT_FOUND);
+    }
 
     const payload: JwtPayload = {
       id: foundUser.id,

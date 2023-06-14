@@ -14,6 +14,7 @@ export const MSG_USER_NOT_FOUND = 'User not found';
 export const MSG_NOT_MATCH = 'Data does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
 export const MSG_INVALID_REFRESH_TOKEN = 'Invalid refresh token';
+export const MSG_ERROR_SEND_MAIL = 'Email sending error';
 
 export const MSG_ERROR_METHOD = (method: string) =>
   `The ${method} method is faulty`;

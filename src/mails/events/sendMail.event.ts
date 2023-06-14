@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailsService } from 'src/mails/mails.service';
 import { UserDto } from 'src/users/dto/user.dto';
 import { MailEvent } from '../mails.enum';
+import { MSG_ERROR_SEND_MAIL } from 'src/constants/message.constant';
 
 interface MailForgotPassPayload {
   receiver: UserDto;
@@ -16,8 +17,12 @@ export class SendMailEvent {
 
   @OnEvent(MailEvent.SEND_MAIL_FORGOT_PASSWORD)
   async handleSendEmailForgotPass(payload: MailForgotPassPayload) {
-    const { receiver, token } = payload;
-    this.logger.log(`Send verification email : ${receiver.email}`);
-    await this.mailService.sendEmailForgotPass(receiver, token);
+    try {
+      const { receiver, token } = payload;
+      this.logger.log(`Send verification email : ${receiver.email}`);
+      await this.mailService.sendEmailForgotPass(receiver, token);
+    } catch {
+      throw new BadRequestException(MSG_ERROR_SEND_MAIL);
+    }
   }
 }
