@@ -15,7 +15,6 @@ import {
   MSG_EMAIL_ALREADY_EXISTS,
   MSG_EMAIL_NOT_EXISTED,
   MSG_INVALID_REFRESH_TOKEN,
-  MSG_INVALID_RESET_PASS_TOKEN,
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
@@ -24,7 +23,6 @@ import {
   MSG_REGISTER_SUCCESSFUL,
   MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
-  MSG_WRONG_PASSWORD,
 } from 'src/constants/message.constant';
 import { UserDto } from 'src/users/dto/user.dto';
 import { MailEvent } from 'src/mails/mails.enum';
@@ -63,10 +61,7 @@ export class AuthService {
       throw new BadRequestException(MSG_EMAIL_NOT_EXISTED);
     }
 
-    const isMatch = await compareHashedData(password, foundUser.password);
-    if (!isMatch) {
-      throw new BadRequestException(MSG_WRONG_PASSWORD);
-    }
+    await compareHashedData(password, foundUser.password);
 
     const payload: JwtPayload = {
       id: foundUser.id,
@@ -108,13 +103,7 @@ export class AuthService {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
 
-    const isMatch = await compareHashedData(
-      refreshToken,
-      foundUser.refreshTokenHash,
-    );
-    if (!isMatch) {
-      throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
-    }
+    await compareHashedData(refreshToken, foundUser.refreshTokenHash);
 
     const jwtPayload: JwtPayload = {
       id: foundUser.id,
@@ -160,10 +149,7 @@ export class AuthService {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
 
-    const isMatch = await compareHashedData(token, foundUser.resetPasswordHash);
-    if (!isMatch) {
-      throw new BadRequestException(MSG_INVALID_RESET_PASS_TOKEN);
-    }
+    await compareHashedData(token, foundUser.resetPasswordHash);
 
     await this.usersService.resetPassword(foundUser.id, newPassword);
     return { message: MSG_PASSWORD_RESET_SUCCESSFUL };

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsJWT,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
@@ -25,6 +26,7 @@ export class ResetPassDto {
   @ApiProperty()
   newPassword: string;
 
+  @IsJWT({ message: 'This is not JWT' })
   @IsString()
   @IsNotEmpty()
   @ApiProperty()

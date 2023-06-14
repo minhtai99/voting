@@ -11,6 +11,9 @@ export const MSG_WRONG_PASSWORD = 'Your email/password is incorrect';
 export const MSG_EMAIL_NOT_EXISTED = 'Email not existed';
 export const MSG_EMAIL_ALREADY_EXISTS = 'Email is already registered';
 export const MSG_USER_NOT_FOUND = 'User not found';
+export const MSG_NOT_MATCH = 'Data does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
 export const MSG_INVALID_REFRESH_TOKEN = 'Invalid refresh token';
-export const MSG_INVALID_RESET_PASS_TOKEN = 'Invalid reset password token';
+
+export const MSG_ERROR_METHOD = (method: string) =>
+  `The ${method} method is faulty`;
