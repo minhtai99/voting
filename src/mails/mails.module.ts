@@ -4,7 +4,7 @@ import { Global, Module } from '@nestjs/common';
 import { MailsService } from './mails.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
-import { SendMailEvent } from './events/sendMail.event';
+import { MailListener } from './listeners/mail.listener';
 
 @Global()
 @Module({
@@ -34,7 +34,7 @@ import { SendMailEvent } from './events/sendMail.event';
     }),
   ],
   controllers: [],
-  providers: [MailsService, SendMailEvent],
-  exports: [MailsService, SendMailEvent],
+  providers: [MailsService, MailListener],
+  exports: [MailsService, MailListener],
 })
 export class MailsModule {}

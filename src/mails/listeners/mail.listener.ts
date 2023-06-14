@@ -1,17 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailsService } from 'src/mails/mails.service';
-import { UserDto } from 'src/users/dto/user.dto';
 import { MailEvent } from '../mails.enum';
 import { MSG_ERROR_SEND_MAIL } from 'src/constants/message.constant';
-
-interface MailForgotPassPayload {
-  receiver: UserDto;
-  token: string;
-}
+import { MailForgotPassPayload } from 'src/interfaces/send-mail.interface';
 
 @Injectable()
-export class SendMailEvent {
+export class MailListener {
   constructor(private readonly mailService: MailsService) {}
   private readonly logger = new Logger(MailsService.name);
 

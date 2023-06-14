@@ -28,6 +28,7 @@ import { UserDto } from 'src/users/dto/user.dto';
 import { MailEvent } from 'src/mails/mails.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResetPassDto } from './dto/reset-password.dto';
+import { MailForgotPassPayload } from 'src/interfaces/send-mail.interface';
 
 interface JwtPayload {
   id: number;
@@ -134,11 +135,14 @@ export class AuthService {
     };
     const resetPassJwt = await this.createJWT(payload, TokenType.RESET_PASS);
     await this.usersService.updateResetPasswordHash(foundUser.id, resetPassJwt);
-
-    this.eventEmitter.emit(MailEvent.SEND_MAIL_FORGOT_PASSWORD, {
+    const forgotPassPayload: MailForgotPassPayload = {
       receiver: foundUser,
       token: resetPassJwt,
-    });
+    };
+    this.eventEmitter.emit(
+      MailEvent.SEND_MAIL_FORGOT_PASSWORD,
+      forgotPassPayload,
+    );
 
     return { message: MSG_SENT_MAIL_FORGOT_PASSWORD };
   }
