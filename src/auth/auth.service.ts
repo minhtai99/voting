@@ -15,20 +15,26 @@ import {
   MSG_EMAIL_ALREADY_EXISTS,
   MSG_EMAIL_NOT_EXISTED,
   MSG_INVALID_REFRESH_TOKEN,
+  MSG_INVALID_RESET_PASS_TOKEN,
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
+  MSG_PASSWORD_RESET_SUCCESSFUL,
   MSG_REFRESH_TOKEN_SUCCESSFUL,
   MSG_REGISTER_SUCCESSFUL,
+  MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
   MSG_WRONG_PASSWORD,
 } from 'src/constants/message.constant';
 import { UserDto } from 'src/users/dto/user.dto';
+import { MailEvent } from 'src/mails/mails.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ResetPassDto } from './dto/reset-password.dto';
 
-type JwtPayload = {
+interface JwtPayload {
   id: number;
   email: string;
-};
+}
 
 @Injectable()
 export class AuthService {
@@ -36,6 +42,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
   async register(register: CreateUserDto) {
     const foundUser = await this.usersService.foundUserByEmail(register.email);
@@ -126,9 +133,45 @@ export class AuthService {
     };
   }
 
-  async verifyToken(refreshToken: string, typeToken: TokenType) {
+  async forgotPassword(email: string) {
+    const foundUser = await this.usersService.foundUserByEmail(email);
+
+    const payload: JwtPayload = {
+      id: foundUser.id,
+      email: foundUser.email,
+    };
+    const resetPassJwt = await this.createJWT(payload, TokenType.RESET_PASS);
+    await this.usersService.updateResetPasswordHash(foundUser.id, resetPassJwt);
+
+    this.eventEmitter.emit(MailEvent.SEND_MAIL_FORGOT_PASSWORD, {
+      receiver: foundUser,
+      token: resetPassJwt,
+    });
+
+    return { message: MSG_SENT_MAIL_FORGOT_PASSWORD };
+  }
+
+  async resetPassword(body: ResetPassDto) {
+    const { newPassword, token } = body;
+    const payload = await this.verifyToken(token, TokenType.RESET_PASS);
+
+    const foundUser = await this.usersService.foundUserByEmail(payload.email);
+    if (!foundUser) {
+      throw new NotFoundException(MSG_USER_NOT_FOUND);
+    }
+
+    const isMatch = await compareHashedData(token, foundUser.resetPasswordHash);
+    if (!isMatch) {
+      throw new BadRequestException(MSG_INVALID_RESET_PASS_TOKEN);
+    }
+
+    await this.usersService.resetPassword(foundUser.id, newPassword);
+    return { message: MSG_PASSWORD_RESET_SUCCESSFUL };
+  }
+
+  async verifyToken(token: string, typeToken: TokenType) {
     try {
-      return await this.jwtService.verify(refreshToken, {
+      return await this.jwtService.verify(token, {
         secret: this.configService.get(`SECRET_${typeToken}_JWT`),
       });
     } catch {

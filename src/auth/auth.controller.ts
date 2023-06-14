@@ -15,6 +15,8 @@ import { Request } from 'express';
 import { UserDto } from 'src/users/dto/user.dto';
 import { User } from 'src/decorators/user.decorator';
 import { JwtAuthGuard } from './jwt.guard';
+import { ForgotPassDto } from './dto/forgot-password.dto';
+import { ResetPassDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -43,5 +45,16 @@ export class AuthController {
   @UseInterceptors(ClassSerializerInterceptor)
   async refreshTokens(@Req() req: Request) {
     return this.authService.refreshToken(req);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: ForgotPassDto) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @UseInterceptors(ClassSerializerInterceptor)
+  resetPassword(@Body() body: ResetPassDto) {
+    return this.authService.resetPassword(body);
   }
 }

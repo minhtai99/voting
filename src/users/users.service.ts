@@ -28,6 +28,31 @@ export class UsersService {
     });
   }
 
+  async updateResetPasswordHash(userId: number, resetPass?: string | null) {
+    const resetPasswordHash = resetPass ? await hashData(resetPass) : null;
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        resetPasswordHash,
+      },
+    });
+  }
+
+  async resetPassword(userId: number, newPassword: string) {
+    const hashedPass = await hashData(newPassword);
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password: hashedPass,
+        resetPasswordHash: null,
+      },
+    });
+  }
+
   async foundUserByEmail(email: string) {
     const foundUser = await this.prisma.user.findUnique({
       where: {
