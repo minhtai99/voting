@@ -30,4 +30,7 @@ export class UserDto implements User {
 
   @Exclude()
   refreshTokenHash: string;
+
+  @Exclude()
+  resetPasswordHash: string;
 }
