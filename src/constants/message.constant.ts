@@ -16,6 +16,4 @@ export const MSG_INVALID_TOKEN = 'Invalid token';
 export const MSG_INVALID_REFRESH_TOKEN = 'Invalid refresh token';
 export const MSG_ERROR_SEND_MAIL = 'Email sending error';
 export const MSG_ERROR_CREATE_TOKEN = 'Token generation error';
-
-export const MSG_ERROR_METHOD = (method: string) =>
-  `The ${method} method is faulty`;
+export const MSG_ERROR_EMPTY_DATA = 'Empty data';

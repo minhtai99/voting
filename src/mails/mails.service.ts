@@ -13,7 +13,7 @@ export class MailsService {
   async sendEmailForgotPass(receiver: UserDto, token: string) {
     const url = `${this.configService.get(
       'FRONTEND_URL',
-    )}/auth/reset-password/${token}`;
+    )}/auth/reset-password?token=${token}`;
 
     await this.mailerService.sendMail({
       to: receiver.email,
