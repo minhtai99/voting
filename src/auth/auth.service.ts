@@ -19,7 +19,7 @@ import {
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
-  MSG_NOT_MATCH,
+  MSG_TOKEN_DOES_NOT_MATCH,
   MSG_PASSWORD_RESET_SUCCESSFUL,
   MSG_REFRESH_TOKEN_SUCCESSFUL,
   MSG_REGISTER_SUCCESSFUL,
@@ -117,7 +117,7 @@ export class AuthService {
       foundUser.refreshTokenHash,
     );
     if (!isMatch) {
-      throw new BadRequestException(MSG_NOT_MATCH);
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
 
     const jwtPayload: JwtPayload = {
@@ -178,7 +178,7 @@ export class AuthService {
       foundUser.resetPasswordHash,
     );
     if (!isMatch) {
-      throw new BadRequestException(MSG_NOT_MATCH);
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
 
     await this.usersService.resetPassword(foundUser.id, newPassword);
