@@ -15,11 +15,13 @@ export class UsersService {
     return newUser;
   }
 
-  async updateRefreshToken(userId: number, refreshToken?: string | null) {
+  async updateRefreshTokenHash(userId: number, refreshToken?: string | null) {
     const refreshTokenSlice = refreshToken
       ? refreshToken.slice(refreshToken.lastIndexOf('.'))
       : null;
-    const refreshTokenHash = await hashData(refreshTokenSlice);
+    const refreshTokenHash = refreshTokenSlice
+      ? await hashData(refreshTokenSlice)
+      : null;
     await this.prisma.user.update({
       where: {
         id: userId,
@@ -31,7 +33,12 @@ export class UsersService {
   }
 
   async updateResetPasswordHash(userId: number, resetPass?: string | null) {
-    const resetPasswordHash = resetPass ? await hashData(resetPass) : null;
+    const resetPasswordSlice = resetPass
+      ? resetPass.slice(resetPass.lastIndexOf('.'))
+      : null;
+    const resetPasswordHash = resetPasswordSlice
+      ? await hashData(resetPasswordSlice)
+      : null;
     await this.prisma.user.update({
       where: {
         id: userId,

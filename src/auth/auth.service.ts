@@ -78,7 +78,10 @@ export class AuthService {
     const accessToken = this.createJWT(payload, TokenType.ACCESS);
     if (isRemember) {
       const refreshToken = this.createJWT(payload, TokenType.REFRESH);
-      await this.usersService.updateRefreshToken(foundUser.id, refreshToken);
+      await this.usersService.updateRefreshTokenHash(
+        foundUser.id,
+        refreshToken,
+      );
       this.setCookie('RefreshToken', refreshToken, req);
     }
 
@@ -90,9 +93,8 @@ export class AuthService {
   }
 
   async logout(user: UserDto, req: Request) {
-    await this.usersService.updateRefreshToken(user.id);
+    await this.usersService.updateRefreshTokenHash(user.id);
 
-    req.res.clearCookie('AccessToken');
     req.res.clearCookie('RefreshToken');
     return { message: MSG_LOGOUT_SUCCESSFUL };
   }
@@ -114,7 +116,6 @@ export class AuthService {
       refreshToken.slice(refreshToken.lastIndexOf('.')),
       foundUser.refreshTokenHash,
     );
-
     if (!isMatch) {
       throw new BadRequestException(MSG_NOT_MATCH);
     }
@@ -126,7 +127,10 @@ export class AuthService {
     const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
     const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
 
-    await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
+    await this.usersService.updateRefreshTokenHash(
+      foundUser.id,
+      newRefreshToken,
+    );
 
     this.setCookie('RefreshToken', newRefreshToken, req);
     return {
