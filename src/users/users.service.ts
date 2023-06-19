@@ -8,13 +8,24 @@ import {
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
 } from 'src/constants/message.constant';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
     try {
+      const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
+      let avatarUrlOld: string = null;
+      if (user.avatarUrl) {
+        avatarUrlOld = destination + '/' + user.avatarUrl;
+      }
+
       const updateUser = await this.prisma.user.update({
         where: {
           email: user.email,
@@ -23,6 +34,10 @@ export class UsersService {
           ...updateUserDto,
         },
       });
+
+      if (avatarUrlOld) {
+        fs.unlink(avatarUrlOld, (err) => err);
+      }
 
       return {
         message: MSG_UPDATE_SUCCESSFUL,

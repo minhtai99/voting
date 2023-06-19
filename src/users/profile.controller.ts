@@ -23,10 +23,7 @@ import { FieldName } from 'src/files/files.enum';
 @Controller('profile')
 @ApiTags('profile')
 export class ProfileController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   async getProfile(@User() user: UserDto) {
@@ -53,13 +50,9 @@ export class ProfileController {
     @UploadedFile() avatar: Express.Multer.File,
   ) {
     try {
-      const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-
-      if (user.avatarUrl) {
-        fs.unlink(destination + '/' + user.avatarUrl, (err) => err);
-      }
-      const position: number = avatar.path.indexOf(avatar.fieldname);
-      const avatarUrl: string = avatar.path.slice(position);
+      const avatarUrl = avatar.path.slice(
+        avatar.path.indexOf(avatar.fieldname),
+      );
       return await this.usersService.updateUser(user, {
         avatarUrl,
       });
