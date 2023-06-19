@@ -6,7 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
-  async create(register: CreateUserDto) {
+  async createUser(register: CreateUserDto) {
     register.password = await hashData(register.password);
 
     const newUser = await this.prisma.user.create({
@@ -15,8 +15,13 @@ export class UsersService {
     return newUser;
   }
 
-  async updateRefreshToken(userId: number, refreshToken?: string | null) {
-    const refreshTokenHash = refreshToken ? await hashData(refreshToken) : null;
+  async updateRefreshTokenHash(userId: number, refreshToken?: string | null) {
+    const refreshTokenSlice = refreshToken
+      ? refreshToken.slice(refreshToken.lastIndexOf('.'))
+      : null;
+    const refreshTokenHash = refreshTokenSlice
+      ? await hashData(refreshTokenSlice)
+      : null;
     await this.prisma.user.update({
       where: {
         id: userId,
@@ -28,7 +33,12 @@ export class UsersService {
   }
 
   async updateResetPasswordHash(userId: number, resetPass?: string | null) {
-    const resetPasswordHash = resetPass ? await hashData(resetPass) : null;
+    const resetPasswordSlice = resetPass
+      ? resetPass.slice(resetPass.lastIndexOf('.'))
+      : null;
+    const resetPasswordHash = resetPasswordSlice
+      ? await hashData(resetPasswordSlice)
+      : null;
     await this.prisma.user.update({
       where: {
         id: userId,

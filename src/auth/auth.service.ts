@@ -19,11 +19,13 @@ import {
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
+  MSG_TOKEN_DOES_NOT_MATCH,
   MSG_PASSWORD_RESET_SUCCESSFUL,
   MSG_REFRESH_TOKEN_SUCCESSFUL,
   MSG_REGISTER_SUCCESSFUL,
   MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
+  MSG_WRONG_PASSWORD,
 } from 'src/constants/message.constant';
 import { UserDto } from 'src/users/dto/user.dto';
 import { MailEvent } from 'src/mails/mails.enum';
@@ -52,7 +54,7 @@ export class AuthService {
 
     return {
       message: MSG_REGISTER_SUCCESSFUL,
-      data: new UserDto(await this.usersService.create(register)),
+      user: new UserDto(await this.usersService.createUser(register)),
     };
   }
 
@@ -63,7 +65,10 @@ export class AuthService {
       throw new BadRequestException(MSG_EMAIL_NOT_EXISTED);
     }
 
-    await compareHashedData(password, foundUser.password);
+    const isMatch = await compareHashedData(password, foundUser.password);
+    if (!isMatch) {
+      throw new BadRequestException(MSG_WRONG_PASSWORD);
+    }
 
     const payload: JwtPayload = {
       id: foundUser.id,
@@ -73,7 +78,10 @@ export class AuthService {
     const accessToken = this.createJWT(payload, TokenType.ACCESS);
     if (isRemember) {
       const refreshToken = this.createJWT(payload, TokenType.REFRESH);
-      await this.usersService.updateRefreshToken(foundUser.id, refreshToken);
+      await this.usersService.updateRefreshTokenHash(
+        foundUser.id,
+        refreshToken,
+      );
       this.setCookie('RefreshToken', refreshToken, req);
     }
 
@@ -85,9 +93,8 @@ export class AuthService {
   }
 
   async logout(user: UserDto, req: Request) {
-    await this.usersService.updateRefreshToken(user.id);
+    await this.usersService.updateRefreshTokenHash(user.id);
 
-    req.res.clearCookie('AccessToken');
     req.res.clearCookie('RefreshToken');
     return { message: MSG_LOGOUT_SUCCESSFUL };
   }
@@ -105,7 +112,13 @@ export class AuthService {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
 
-    await compareHashedData(refreshToken, foundUser.refreshTokenHash);
+    const isMatch = await compareHashedData(
+      refreshToken.slice(refreshToken.lastIndexOf('.')),
+      foundUser.refreshTokenHash,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
+    }
 
     const jwtPayload: JwtPayload = {
       id: foundUser.id,
@@ -114,7 +127,10 @@ export class AuthService {
     const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
     const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
 
-    await this.usersService.updateRefreshToken(foundUser.id, newRefreshToken);
+    await this.usersService.updateRefreshTokenHash(
+      foundUser.id,
+      newRefreshToken,
+    );
 
     this.setCookie('RefreshToken', newRefreshToken, req);
     return {
@@ -157,7 +173,13 @@ export class AuthService {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
 
-    await compareHashedData(token, foundUser.resetPasswordHash);
+    const isMatch = await compareHashedData(
+      token.slice(token.lastIndexOf('.')),
+      foundUser.resetPasswordHash,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
+    }
 
     await this.usersService.resetPassword(foundUser.id, newPassword);
     return { message: MSG_PASSWORD_RESET_SUCCESSFUL };

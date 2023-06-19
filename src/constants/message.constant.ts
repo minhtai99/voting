@@ -11,11 +11,10 @@ export const MSG_WRONG_PASSWORD = 'Your email/password is incorrect';
 export const MSG_EMAIL_NOT_EXISTED = 'Email not existed';
 export const MSG_EMAIL_ALREADY_EXISTS = 'Email is already registered';
 export const MSG_USER_NOT_FOUND = 'User not found';
-export const MSG_NOT_MATCH = 'Data does not match';
+export const MSG_TOKEN_DOES_NOT_MATCH = 'Token does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
 export const MSG_INVALID_REFRESH_TOKEN = 'Invalid refresh token';
 export const MSG_ERROR_SEND_MAIL = 'Email sending error';
 export const MSG_ERROR_CREATE_TOKEN = 'Token generation error';
-
-export const MSG_ERROR_METHOD = (method: string) =>
-  `The ${method} method is faulty`;
+export const MSG_EMPTY_HASH_DATA = 'Empty hash data';
+export const MSG_EMPTY_COMPARE_DATA = 'Empty compare data';
