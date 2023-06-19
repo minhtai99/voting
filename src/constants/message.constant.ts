@@ -6,6 +6,7 @@ export const MSG_REFRESH_TOKEN_SUCCESSFUL = 'Refresh token successful';
 export const MSG_SENT_MAIL_FORGOT_PASSWORD =
   'Password reset URL is being sent to your email';
 export const MSG_PASSWORD_RESET_SUCCESSFUL = 'Password reset successful';
+export const MSG_UPDATE_SUCCESSFUL = 'Update successful';
 // Error message
 export const MSG_WRONG_PASSWORD = 'Your email/password is incorrect';
 export const MSG_EMAIL_NOT_EXISTED = 'Email not existed';
@@ -18,3 +19,5 @@ export const MSG_ERROR_SEND_MAIL = 'Email sending error';
 export const MSG_ERROR_CREATE_TOKEN = 'Token generation error';
 export const MSG_EMPTY_HASH_DATA = 'Empty hash data';
 export const MSG_EMPTY_COMPARE_DATA = 'Empty compare data';
+export const MSG_FILE_NOT_FOUND = 'File not found';
+export const MSG_UPDATE_FAIL = 'Update fail';

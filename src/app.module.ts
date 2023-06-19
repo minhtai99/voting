@@ -7,6 +7,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MailsModule } from './mails/mails.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { FilesModule } from './files/files.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -18,6 +21,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UsersModule,
     MailsModule,
     EventEmitterModule.forRoot(),
+    FilesModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      exclude: ['/(.*)'],
+    }),
   ],
   controllers: [],
   providers: [

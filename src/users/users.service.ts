@@ -1,11 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { hashData } from 'src/helpers/hash.helper';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserDto } from './dto/user.dto';
+import {
+  MSG_UPDATE_FAIL,
+  MSG_UPDATE_SUCCESSFUL,
+} from 'src/constants/message.constant';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
+    try {
+      const updateUser = await this.prisma.user.update({
+        where: {
+          email: user.email,
+        },
+        data: {
+          ...updateUserDto,
+        },
+      });
+
+      return {
+        message: MSG_UPDATE_SUCCESSFUL,
+        user: new UserDto(updateUser),
+      };
+    } catch {
+      throw new InternalServerErrorException(MSG_UPDATE_FAIL);
+    }
+  }
+
   async createUser(register: CreateUserDto) {
     register.password = await hashData(register.password);
 
@@ -60,6 +87,15 @@ export class UsersService {
         resetPasswordHash: null,
       },
     });
+  }
+
+  async findUserById(userId: number) {
+    const foundUser = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    return foundUser;
   }
 
   async foundUserByEmail(email: string) {
