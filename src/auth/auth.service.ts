@@ -47,7 +47,7 @@ export class AuthService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
   async register(register: CreateUserDto) {
-    const foundUser = await this.usersService.foundUserByEmail(register.email);
+    const foundUser = await this.usersService.findUserByEmail(register.email);
     if (foundUser) {
       throw new BadRequestException(MSG_EMAIL_ALREADY_EXISTS);
     }
@@ -60,7 +60,7 @@ export class AuthService {
 
   async login(loginAuthDto: LoginAuthDto, req: Request) {
     const { email, password, isRemember } = loginAuthDto;
-    const foundUser = await this.usersService.foundUserByEmail(email);
+    const foundUser = await this.usersService.findUserByEmail(email);
     if (!foundUser) {
       throw new BadRequestException(MSG_EMAIL_NOT_EXISTED);
     }
@@ -107,7 +107,7 @@ export class AuthService {
 
     const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
 
-    const foundUser = await this.usersService.foundUserByEmail(payload.email);
+    const foundUser = await this.usersService.findUserByEmail(payload.email);
     if (!foundUser) {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
@@ -141,7 +141,7 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const foundUser = await this.usersService.foundUserByEmail(email);
+    const foundUser = await this.usersService.findUserByEmail(email);
     if (!foundUser) {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
@@ -164,11 +164,11 @@ export class AuthService {
     return { message: MSG_SENT_MAIL_FORGOT_PASSWORD };
   }
 
-  async resetPassword(body: ResetPassDto) {
-    const { newPassword, token } = body;
+  async resetPassword(resetPassDto: ResetPassDto) {
+    const { newPassword, token } = resetPassDto;
     const payload = await this.verifyToken(token, TokenType.RESET_PASS);
 
-    const foundUser = await this.usersService.foundUserByEmail(payload.email);
+    const foundUser = await this.usersService.findUserByEmail(payload.email);
     if (!foundUser) {
       throw new NotFoundException(MSG_USER_NOT_FOUND);
     }
@@ -181,7 +181,7 @@ export class AuthService {
       throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
 
-    await this.usersService.resetPassword(foundUser.id, newPassword);
+    await this.usersService.updatePassword(foundUser.id, newPassword);
     return { message: MSG_PASSWORD_RESET_SUCCESSFUL };
   }
 
