@@ -1,13 +1,20 @@
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { hashData } from 'src/helpers/hash.helper';
+import { compareHashedData, hashData } from 'src/helpers/hash.helper';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
 import {
+  MSG_CHANGE_PASSWORD_SUCCESSFUL,
+  MSG_CURRENT_PASSWORD_DOES_NOT_MATCH,
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
 } from 'src/constants/message.constant';
+import { ChangePassDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UsersService {
@@ -76,7 +83,7 @@ export class UsersService {
     });
   }
 
-  async resetPassword(userId: number, newPassword: string) {
+  async updatePassword(userId: number, newPassword: string) {
     const hashedPass = await hashData(newPassword);
     await this.prisma.user.update({
       where: {
@@ -89,6 +96,19 @@ export class UsersService {
     });
   }
 
+  async changePassword(user: UserDto, changePassDto: ChangePassDto) {
+    const isMatch = await compareHashedData(
+      changePassDto.currentPassword,
+      user.password,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_CURRENT_PASSWORD_DOES_NOT_MATCH);
+    }
+
+    await this.updatePassword(user.id, changePassDto.newPassword);
+    return { message: MSG_CHANGE_PASSWORD_SUCCESSFUL };
+  }
+
   async findUserById(userId: number) {
     const foundUser = await this.prisma.user.findUnique({
       where: {
@@ -98,7 +118,7 @@ export class UsersService {
     return foundUser;
   }
 
-  async foundUserByEmail(email: string) {
+  async findUserByEmail(email: string) {
     const foundUser = await this.prisma.user.findUnique({
       where: {
         email,

@@ -1,3 +1,4 @@
+import { ChangePassDto } from './dto/change-password.dto';
 import {
   Body,
   Controller,
@@ -65,5 +66,10 @@ export class ProfileController {
     } catch {
       fs.unlink(avatar.path, (err) => err);
     }
+  }
+
+  @Patch('change-password')
+  changePassword(@User() user: UserDto, @Body() changePassDto: ChangePassDto) {
+    return this.usersService.changePassword(user, changePassDto);
   }
 }
