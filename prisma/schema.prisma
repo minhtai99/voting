@@ -18,4 +18,5 @@ model User {
   lastName          String
   refreshTokenHash  String?
   resetPasswordHash String?
+  avatarUrl         String?
 }
