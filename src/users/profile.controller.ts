@@ -14,7 +14,6 @@ import { UserDto } from './dto/user.dto';
 import { User } from 'src/decorators/user.decorator';
 import { UsersService } from './users.service';
 import * as fs from 'fs';
-import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from 'src/files/files.service';
 import { FieldName } from 'src/files/files.enum';

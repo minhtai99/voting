@@ -21,7 +21,7 @@ export class UsersService {
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
     try {
       const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-      let avatarUrlOld: string = null;
+      let avatarUrlOld: string;
       if (user.avatarUrl) {
         avatarUrlOld = destination + '/' + user.avatarUrl;
       }
