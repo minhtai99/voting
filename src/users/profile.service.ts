@@ -8,11 +8,8 @@ export class ProfileService {
   constructor(private readonly configService: ConfigService) {}
 
   deleteAvatarFile(user: UserDto) {
+    if (!user.avatarUrl) return;
     const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-    const avatarUrl = destination + '/' + user.avatarUrl;
-
-    if (avatarUrl) {
-      fs.unlink(avatarUrl, (err) => err);
-    }
+    fs.unlink(`${destination}/${user.avatarUrl}`, (err) => err);
   }
 }
