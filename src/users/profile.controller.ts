@@ -64,7 +64,7 @@ export class ProfileController {
       this.profileService.deleteAvatarFile(user);
       return userUpdated;
     } catch {
-      fs.unlink(avatar.path, (err) => err);
+      fs.unlinkSync(avatar.path);
     }
   }
 

@@ -10,7 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
 import {
   MSG_CHANGE_PASSWORD_SUCCESSFUL,
-  MSG_CURRENT_PASSWORD_DOES_NOT_MATCH,
+  MSG_CURRENT_PASSWORD_INCORRECT,
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
 } from 'src/constants/message.constant';
@@ -102,7 +102,7 @@ export class UsersService {
       user.password,
     );
     if (!isMatch) {
-      throw new BadRequestException(MSG_CURRENT_PASSWORD_DOES_NOT_MATCH);
+      throw new BadRequestException(MSG_CURRENT_PASSWORD_INCORRECT);
     }
 
     await this.updatePassword(user.id, changePassDto.newPassword);
