@@ -20,6 +20,11 @@ import { ChangePassDto } from './dto/change-password.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getAllUsers() {
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => new UserDto(user));
+  }
+
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
     try {
       const updateUser = await this.prisma.user.update({

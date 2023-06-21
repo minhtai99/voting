@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PollStatus, AnswerType } from '@prisma/client';
-import { Transform } from 'class-transformer';
+import { AnswerType } from '@prisma/client';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -10,8 +10,12 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  MinDate,
+  ValidateNested,
 } from 'class-validator';
 import { GreaterComparison } from 'src/decorators/greater-comparison.decorator';
+import { StatusCreatePoll } from '../polls.enum';
+import { RequestAnswerOption } from 'src/answer-option/dto/request-answer-option.dto';
 
 export class CreatePollDto {
   @MaxLength(50)
@@ -31,15 +35,11 @@ export class CreatePollDto {
   @ApiProperty({ enum: AnswerType })
   answerType: AnswerType;
 
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  backgroundUrl?: string;
-
   @IsDate()
+  @MinDate(new Date())
   @Transform(({ value }) => value && new Date(value))
   @ApiProperty()
-  startDate?: Date = new Date('2777-07-07T00:00:00');
+  startDate: Date = new Date('2777-07-07T00:00:00');
 
   @GreaterComparison<CreatePollDto>('startDate')
   @IsDate()
@@ -53,18 +53,22 @@ export class CreatePollDto {
   @ApiProperty({ required: false, default: false })
   isPublic?: boolean = false;
 
-  @IsEnum(PollStatus)
+  @IsEnum(StatusCreatePoll)
   @IsNotEmpty()
-  @ApiProperty({ enum: PollStatus })
-  status: PollStatus;
+  @ApiProperty({ enum: StatusCreatePoll })
+  status: StatusCreatePoll;
 
   @IsArray()
+  @Transform((item) => item.value.map((v) => Number(v)))
   @IsOptional()
-  @ApiProperty({ required: false })
-  invitedUsers?: string[];
+  @ApiProperty({ required: false, type: [Number] })
+  invitedUsers?: number[];
 
   @IsArray()
+  @Type(() => RequestAnswerOption)
+  @ValidateNested({ each: true })
+  @Transform((item) => item.value && Object(item.value))
   @IsOptional()
-  @ApiProperty({ required: false })
-  answerOptions?: string[];
+  @ApiProperty({ required: false, type: [RequestAnswerOption] })
+  answerOptions?: RequestAnswerOption[];
 }

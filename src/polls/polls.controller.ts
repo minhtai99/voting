@@ -27,7 +27,7 @@ export class PollsController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: FieldName.PICTURES, maxCount: 5 },
+        { name: FieldName.PICTURES, maxCount: 10 },
         { name: FieldName.BACKGROUND, maxCount: 1 },
       ],
       FilesService.multerOptions({
@@ -67,13 +67,15 @@ export class PollsController {
         backgroundUrl,
       );
     } catch {
-      if (images.background !== undefined)
-        fs.unlinkSync(images.background[0].path);
-      if (images.pictures !== undefined)
-        images.pictures.forEach((picture) => {
-          if (picture === undefined) return;
-          fs.unlinkSync(picture.path);
-        });
+      if (images !== undefined) {
+        if (images.background !== undefined)
+          fs.unlink(images.background[0].path, (err) => err);
+        if (images.pictures !== undefined)
+          images.pictures.forEach((picture) => {
+            if (picture === undefined) return;
+            fs.unlink(picture.path, (err) => err);
+          });
+      }
     }
   }
 }

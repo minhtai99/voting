@@ -11,8 +11,6 @@ import { FilesModule } from './files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PollsModule } from './polls/polls.module';
-import { AnswerOptionModule } from './answer-option/answer-option.module';
-import { VotesModule } from './votes/votes.module';
 
 @Module({
   imports: [
@@ -30,8 +28,6 @@ import { VotesModule } from './votes/votes.module';
       exclude: ['/(.*)'],
     }),
     PollsModule,
-    AnswerOptionModule,
-    VotesModule,
   ],
   controllers: [],
   providers: [

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { PollsController } from './polls.controller';
-import { AnswerOptionModule } from 'src/answer-option/answer-option.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [AnswerOptionModule],
+  imports: [UsersModule],
   controllers: [PollsController],
   providers: [PollsService],
   exports: [PollsService],
