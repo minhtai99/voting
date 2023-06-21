@@ -7,6 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PollStatus {
+  pending
+  draft
+  ongoing
+  completed
+}
+
+enum AnswerType {
+  checkbox
+  radio
+  input
+}
+
 model User {
   id        Int      @id @unique @default(autoincrement())
   createdAt DateTime @default(now())
@@ -19,4 +32,57 @@ model User {
   refreshTokenHash  String?
   resetPasswordHash String?
   avatarUrl         String?
+
+  invitedPolls Poll[] @relation("InvitationToPoll")
+  createdPolls Poll[]
+  createdVotes Vote[]
+}
+
+model Poll {
+  id        Int      @id @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  title         String
+  question      String
+  answerType    AnswerType
+  backgroundUrl String?
+  startDate     DateTime?
+  endDate       DateTime?
+  isPublic      Boolean
+  status        PollStatus
+
+  invitedUsers  User[]         @relation("InvitationToPoll")
+  answerOptions AnswerOption[]
+  votes         Vote[]
+  author        User           @relation(fields: [authorId], references: [id])
+  authorId      Int
+}
+
+model AnswerOption {
+  id        Int      @id @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  content    String
+  pictureUrl String?
+
+  votes  Vote[]
+  poll   Poll   @relation(fields: [pollId], references: [id])
+  pollId Int
+}
+
+model Vote {
+  id        Int      @id @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  input String?
+
+  answerOption   AnswerOption? @relation(fields: [answerOptionId], references: [id])
+  answerOptionId Int?
+  poll           Poll          @relation(fields: [pollId], references: [id])
+  pollId         Int
+  participant    User          @relation(fields: [participantId], references: [id])
+  participantId  Int
 }

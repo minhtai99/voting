@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  InternalServerErrorException,
   Patch,
   UploadedFile,
   UseGuards,
@@ -19,6 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from 'src/files/files.service';
 import { FieldName } from 'src/files/files.enum';
 import { ProfileService } from './profile.service';
+import { MSG_FILE_UPLOAD_FAILED } from 'src/constants/message.constant';
 
 @UseGuards(JwtAuthGuard)
 @Controller('profile')
@@ -65,6 +67,7 @@ export class ProfileController {
       return userUpdated;
     } catch {
       fs.unlink(avatar.path, (err) => err);
+      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
     }
   }
 

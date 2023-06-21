@@ -10,6 +10,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FilesModule } from './files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { PollsModule } from './polls/polls.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { join } from 'path';
       rootPath: join(__dirname, '..', 'uploads'),
       exclude: ['/(.*)'],
     }),
+    PollsModule,
   ],
   controllers: [],
   providers: [

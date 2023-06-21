@@ -1,8 +1,11 @@
 import { FieldName } from 'src/files/files.enum';
 
 export const fileFilter = (fieldname: FieldName, mimetype: string): boolean => {
-  if (mimetype.match(/\/(jpg|jpeg|png)$/) && fieldname === FieldName.AVATAR) {
-    return true;
+  if (fieldname === FieldName.AVATAR) {
+    if (mimetype.match(/\/(jpg|jpeg|png)$/)) return true;
+  }
+  if (fieldname === FieldName.BACKGROUND || fieldname === FieldName.PICTURES) {
+    if (mimetype.match(/\/(jpg|jpeg|png|tiff|jfif)$/)) return true;
   }
   return false;
 };

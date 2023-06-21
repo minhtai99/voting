@@ -10,7 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
 import {
   MSG_CHANGE_PASSWORD_SUCCESSFUL,
-  MSG_CURRENT_PASSWORD_DOES_NOT_MATCH,
+  MSG_CURRENT_PASSWORD_INCORRECT,
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
 } from 'src/constants/message.constant';
@@ -19,6 +19,11 @@ import { ChangePassDto } from './dto/change-password.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getAllUsers() {
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => new UserDto(user));
+  }
 
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
     try {
@@ -102,7 +107,7 @@ export class UsersService {
       user.password,
     );
     if (!isMatch) {
-      throw new BadRequestException(MSG_CURRENT_PASSWORD_DOES_NOT_MATCH);
+      throw new BadRequestException(MSG_CURRENT_PASSWORD_INCORRECT);
     }
 
     await this.updatePassword(user.id, changePassDto.newPassword);
