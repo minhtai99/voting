@@ -5,6 +5,7 @@ import {
   Body,
   UploadedFiles,
   UseInterceptors,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
@@ -16,6 +17,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from 'src/files/files.service';
 import { FieldName } from 'src/files/files.enum';
 import * as fs from 'fs';
+import { MSG_FILE_UPLOAD_FAILED } from 'src/constants/message.constant';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -76,6 +78,7 @@ export class PollsController {
             fs.unlink(picture.path, (err) => err);
           });
       }
+      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
     }
   }
 }

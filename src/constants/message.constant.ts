@@ -23,5 +23,6 @@ export const MSG_EMPTY_HASH_DATA = 'Empty hash data';
 export const MSG_EMPTY_COMPARE_DATA = 'Empty compare data';
 export const MSG_FILE_NOT_FOUND = 'File not found';
 export const MSG_UPDATE_FAIL = 'Update fail';
+export const MSG_FILE_UPLOAD_FAILED = 'File upload failed';
 export const MSG_CURRENT_PASSWORD_INCORRECT = 'Current password incorrect!';
 export const MSG_ERROR_IMAGE_INDEX = 'Image not found';
