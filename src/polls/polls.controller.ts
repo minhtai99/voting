@@ -71,6 +71,7 @@ export class PollsController {
         fs.unlinkSync(images.background[0].path);
       if (images.pictures !== undefined)
         images.pictures.forEach((picture) => {
+          if (picture === undefined) return;
           fs.unlinkSync(picture.path);
         });
     }
