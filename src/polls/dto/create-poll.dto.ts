@@ -11,6 +11,7 @@ import {
   IsString,
   MaxLength,
   MinDate,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { GreaterComparison } from 'src/decorators/greater-comparison.decorator';
@@ -38,14 +39,18 @@ export class CreatePollDto {
   @IsDate()
   @MinDate(new Date())
   @Transform(({ value }) => value && new Date(value))
+  @IsNotEmpty()
+  @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
   @ApiProperty()
-  startDate: Date = new Date('2777-07-07T00:00:00');
+  startDate: Date;
 
   @GreaterComparison<CreatePollDto>('startDate')
   @IsDate()
-  @Transform(({ value }) => value && new Date(value))
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
   @ApiProperty()
-  endDate: Date = new Date('2777-07-07T07:07:00');
+  endDate: Date;
 
   @IsBoolean()
   @Transform(({ value }) => value && Boolean(value))

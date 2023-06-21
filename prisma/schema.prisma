@@ -47,8 +47,8 @@ model Poll {
   question      String
   answerType    AnswerType
   backgroundUrl String?
-  startDate     DateTime
-  endDate       DateTime
+  startDate     DateTime?
+  endDate       DateTime?
   isPublic      Boolean
   status        PollStatus
 
