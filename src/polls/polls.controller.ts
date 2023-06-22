@@ -88,12 +88,34 @@ export class PollsController {
     @User() user: UserDto,
     @Body() filterPollDto: FilterPollDto,
   ) {
-    const authorId = { not: user.id };
-    return this.pollsService.getPollList(authorId, filterPollDto);
+    filterPollDto.where = {
+      OR: [
+        {
+          invitedUsers: {
+            some: {
+              id: user.id,
+            },
+          },
+        },
+        {
+          votes: {
+            some: {
+              participantId: user.id,
+            },
+          },
+        },
+      ],
+      ...filterPollDto.where,
+    };
+    return this.pollsService.getPollList(filterPollDto);
   }
 
   @Post('my-polls')
   getMyPolls(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
-    return this.pollsService.getPollList(user.id, filterPollDto);
+    filterPollDto.where = {
+      authorId: user.id,
+      ...filterPollDto.where,
+    };
+    return this.pollsService.getPollList(filterPollDto);
   }
 }

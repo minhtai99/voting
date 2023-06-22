@@ -88,10 +88,7 @@ export class PollsService {
     };
   }
 
-  async getPollList(
-    authorId: number | { not: number },
-    filterPollDto: FilterPollDto,
-  ) {
+  async getPollList(filterPollDto: FilterPollDto) {
     const page = filterPollDto.page || 1;
     const size = filterPollDto.size || 10;
     const where = filterPollDto.where;
@@ -101,18 +98,12 @@ export class PollsService {
     const skip = (page - 1) * size;
 
     const total = await this.prisma.poll.count({
-      where: {
-        authorId,
-        ...where,
-      },
+      where,
     });
 
     const polls = await this.prisma.poll.findMany({
       select,
-      where: {
-        authorId,
-        ...where,
-      },
+      where,
       skip,
       take: size,
       orderBy,
