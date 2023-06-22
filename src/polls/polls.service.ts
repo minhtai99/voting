@@ -39,22 +39,20 @@ export class PollsService {
     };
 
     if (createPollDto.answerType !== AnswerType.input) {
-      if (createPollDto.answerOptions !== undefined) {
-        answerOptions = createPollDto.answerOptions.map(
-          (answerOption): CreateAnswerOptionDto => {
-            if (
-              picturesUrl[answerOption.imageIndex] === undefined &&
-              answerOption.imageIndex !== undefined
-            ) {
-              throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
-            }
-            return {
-              content: answerOption.content,
-              pictureUrl: picturesUrl[answerOption.imageIndex],
-            };
-          },
-        );
-      }
+      answerOptions = createPollDto.answerOptions.map(
+        (answerOption): CreateAnswerOptionDto => {
+          if (
+            picturesUrl[answerOption.imageIndex] === undefined &&
+            answerOption.imageIndex !== undefined
+          ) {
+            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
+          }
+          return {
+            content: answerOption.content,
+            pictureUrl: picturesUrl[answerOption.imageIndex],
+          };
+        },
+      );
     }
     if (createPollDto.isPublic === true) {
       const users = await this.usersService.getAllUsers();
@@ -62,11 +60,9 @@ export class PollsService {
         return { id: user.id };
       });
     } else {
-      if (createPollDto.invitedUsers !== undefined) {
-        invitedUsers = createPollDto.invitedUsers.map((userId) => {
-          return { id: userId };
-        });
-      }
+      invitedUsers = createPollDto.invitedUsers.map((userId) => {
+        return { id: userId };
+      });
     }
 
     const poll = await this.prisma.poll.create({
@@ -92,19 +88,21 @@ export class PollsService {
     };
   }
 
-  async getPollList(user: UserDto, filterPollDto: FilterPollDto) {
+  async getPollList(
+    authorId: number | { not: number },
+    filterPollDto: FilterPollDto,
+  ) {
     const page = filterPollDto.page || 1;
     const size = filterPollDto.size || 10;
     const where = filterPollDto.where;
     const select = filterPollDto.select;
     const orderBy = filterPollDto.orderBy;
-    const authorId = filterPollDto.isAuthor ? user.id : { not: user.id };
 
     const skip = (page - 1) * size;
 
     const total = await this.prisma.poll.count({
       where: {
-        authorId: authorId,
+        authorId,
         ...where,
       },
     });
@@ -112,7 +110,7 @@ export class PollsService {
     const polls = await this.prisma.poll.findMany({
       select,
       where: {
-        authorId: authorId,
+        authorId,
         ...where,
       },
       skip,

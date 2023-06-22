@@ -83,8 +83,17 @@ export class PollsController {
     }
   }
 
-  @Post('list')
-  getPollList(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
-    return this.pollsService.getPollList(user, filterPollDto);
+  @Post('participant-polls')
+  getParticipantPolls(
+    @User() user: UserDto,
+    @Body() filterPollDto: FilterPollDto,
+  ) {
+    const authorId = { not: user.id };
+    return this.pollsService.getPollList(authorId, filterPollDto);
+  }
+
+  @Post('my-polls')
+  getMyPolls(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
+    return this.pollsService.getPollList(user.id, filterPollDto);
   }
 }

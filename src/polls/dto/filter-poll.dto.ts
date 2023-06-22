@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class FilterPollDto {
   @IsNumber()
@@ -11,11 +11,6 @@ export class FilterPollDto {
   @IsNotEmpty()
   @ApiProperty()
   size: number;
-
-  @IsBoolean()
-  @IsNotEmpty()
-  @ApiProperty()
-  isAuthor: boolean;
 
   @IsOptional()
   @ApiProperty({ required: false })

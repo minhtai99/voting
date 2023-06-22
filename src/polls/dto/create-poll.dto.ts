@@ -3,6 +3,7 @@ import { AnswerType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDate,
@@ -64,11 +65,12 @@ export class CreatePollDto {
   @ApiProperty({ enum: StatusCreatePoll })
   status: StatusCreatePoll;
 
+  @ArrayMinSize(1)
   @IsArray()
   @Transform((item) => item.value.map((v) => Number(v)))
-  @IsOptional()
+  @ValidateIf((e) => e.isPublic === false)
   @ApiProperty({ required: false, type: [Number] })
-  invitedUsers?: number[];
+  invitedUsers: number[];
 
   @ArrayMaxSize(10)
   @IsArray()
@@ -77,5 +79,5 @@ export class CreatePollDto {
   @Transform((item) => item.value && Object(item.value))
   @IsOptional()
   @ApiProperty({ required: false, type: [RequestAnswerOption] })
-  answerOptions?: RequestAnswerOption[];
+  answerOptions?: RequestAnswerOption[] = [];
 }
