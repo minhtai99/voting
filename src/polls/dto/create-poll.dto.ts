@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { AnswerType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDate,
@@ -36,8 +37,8 @@ export class CreatePollDto {
   @ApiProperty({ enum: AnswerType })
   answerType: AnswerType;
 
-  @IsDate()
   @MinDate(new Date())
+  @IsDate()
   @Transform(({ value }) => value && new Date(value))
   @IsNotEmpty()
   @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
@@ -69,6 +70,7 @@ export class CreatePollDto {
   @ApiProperty({ required: false, type: [Number] })
   invitedUsers?: number[];
 
+  @ArrayMaxSize(10)
   @IsArray()
   @Type(() => RequestAnswerOption)
   @ValidateNested({ each: true })

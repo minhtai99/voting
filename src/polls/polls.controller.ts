@@ -18,6 +18,7 @@ import { FilesService } from 'src/files/files.service';
 import { FieldName } from 'src/files/files.enum';
 import * as fs from 'fs';
 import { MSG_FILE_UPLOAD_FAILED } from 'src/constants/message.constant';
+import { FilterPollDto } from './dto/filter-poll.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -80,5 +81,10 @@ export class PollsController {
       }
       throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
     }
+  }
+
+  @Post('list')
+  getPollList(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
+    return this.pollsService.getPollList(user, filterPollDto);
   }
 }
