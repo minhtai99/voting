@@ -89,22 +89,7 @@ export class PollsController {
     @Body() filterPollDto: FilterPollDto,
   ) {
     filterPollDto.where = {
-      OR: [
-        {
-          invitedUsers: {
-            some: {
-              id: user.id,
-            },
-          },
-        },
-        {
-          votes: {
-            some: {
-              participantId: user.id,
-            },
-          },
-        },
-      ],
+      ...this.pollsService.filterParticipantPoll(user.id),
       ...filterPollDto.where,
     };
     return this.pollsService.getPollList(filterPollDto);

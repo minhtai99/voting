@@ -120,4 +120,25 @@ export class PollsService {
       polls: polls.map((poll) => new PollDto(poll)),
     };
   }
+
+  filterParticipantPoll(userId: number) {
+    return {
+      OR: [
+        {
+          invitedUsers: {
+            some: {
+              id: userId,
+            },
+          },
+        },
+        {
+          votes: {
+            some: {
+              participantId: userId,
+            },
+          },
+        },
+      ],
+    };
+  }
 }
