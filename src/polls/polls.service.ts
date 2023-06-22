@@ -10,6 +10,7 @@ import {
 } from 'src/constants/message.constant';
 import { AnswerType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
+import { FilterPollDto } from './dto/filter-poll.dto';
 
 @Injectable()
 export class PollsService {
@@ -84,6 +85,60 @@ export class PollsService {
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
       poll: new PollDto(poll),
+    };
+  }
+
+  async getPollList(filterPollDto: FilterPollDto) {
+    const page = filterPollDto.page || 1;
+    const size = filterPollDto.size || 10;
+    const where = filterPollDto.where;
+    const select = filterPollDto.select;
+    const orderBy = filterPollDto.orderBy;
+
+    const skip = (page - 1) * size;
+
+    const total = await this.prisma.poll.count({
+      where,
+    });
+
+    const polls = await this.prisma.poll.findMany({
+      select,
+      where,
+      skip,
+      take: size,
+      orderBy,
+    });
+
+    const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
+    const prevPage = page - 1 < 1 ? null : page - 1;
+
+    return {
+      total: total,
+      currentPage: page,
+      nextPage,
+      prevPage,
+      polls: polls.map((poll) => new PollDto(poll)),
+    };
+  }
+
+  filterParticipantPoll(userId: number) {
+    return {
+      OR: [
+        {
+          invitedUsers: {
+            some: {
+              id: userId,
+            },
+          },
+        },
+        {
+          votes: {
+            some: {
+              participantId: userId,
+            },
+          },
+        },
+      ],
     };
   }
 }

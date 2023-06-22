@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { AnswerType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDate,
@@ -19,7 +21,7 @@ import { StatusCreatePoll } from '../polls.enum';
 import { RequestAnswerOption } from 'src/answer-option/dto/request-answer-option.dto';
 
 export class CreatePollDto {
-  @MaxLength(50)
+  @MaxLength(200)
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
@@ -36,8 +38,8 @@ export class CreatePollDto {
   @ApiProperty({ enum: AnswerType })
   answerType: AnswerType;
 
-  @IsDate()
   @MinDate(new Date())
+  @IsDate()
   @Transform(({ value }) => value && new Date(value))
   @IsNotEmpty()
   @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
@@ -63,17 +65,19 @@ export class CreatePollDto {
   @ApiProperty({ enum: StatusCreatePoll })
   status: StatusCreatePoll;
 
+  @ArrayMinSize(1)
   @IsArray()
   @Transform((item) => item.value.map((v) => Number(v)))
-  @IsOptional()
+  @ValidateIf((e) => e.isPublic === false)
   @ApiProperty({ required: false, type: [Number] })
-  invitedUsers?: number[];
+  invitedUsers: number[];
 
+  @ArrayMaxSize(10)
   @IsArray()
   @Type(() => RequestAnswerOption)
   @ValidateNested({ each: true })
   @Transform((item) => item.value && Object(item.value))
   @IsOptional()
   @ApiProperty({ required: false, type: [RequestAnswerOption] })
-  answerOptions?: RequestAnswerOption[];
+  answerOptions?: RequestAnswerOption[] = [];
 }

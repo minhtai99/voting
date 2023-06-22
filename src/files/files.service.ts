@@ -49,7 +49,8 @@ export class FilesService {
         cb(null, uploadPath);
       },
       filename: (req: any, file: any, cb: any) => {
-        cb(null, `${uuid()}-${file.originalname}`);
+        const originalname = file.originalname.replace(' ', '');
+        cb(null, `${uuid()}-${originalname}`);
       },
     });
   }
