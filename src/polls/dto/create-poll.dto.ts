@@ -21,7 +21,7 @@ import { StatusCreatePoll } from '../polls.enum';
 import { RequestAnswerOption } from 'src/answer-option/dto/request-answer-option.dto';
 
 export class CreatePollDto {
-  @MaxLength(50)
+  @MaxLength(200)
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
