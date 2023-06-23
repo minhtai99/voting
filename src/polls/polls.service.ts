@@ -11,12 +11,15 @@ import { AnswerType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
+import * as fs from 'fs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PollsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createPoll(
@@ -121,6 +124,15 @@ export class PollsService {
           };
         },
       );
+    } else {
+      if (picturesUrl.length !== 0) {
+        const destination = this.configService.get(
+          'UPLOADED_FILES_DESTINATION',
+        );
+        picturesUrl.forEach((url) => {
+          fs.unlink(`${destination}/${url}`, (err) => err);
+        });
+      }
     }
     if (pollDto.isPublic === true) {
       const users = await this.usersService.getAllUsers();
