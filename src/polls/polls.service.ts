@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserDto } from 'src/users/dto/user.dto';
-import { CreateDraftPollDto } from './dto/create-draft-poll.dto';
 import { CreateAnswerOptionDto } from 'src/answer-option/dto/create-answer-option.dto';
 import { PollDto } from './dto/poll.dto';
 import {
@@ -11,6 +10,7 @@ import {
 import { AnswerType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
+import { CreatePollDto } from './dto/create-poll.dto';
 
 @Injectable()
 export class PollsService {
@@ -21,59 +21,25 @@ export class PollsService {
 
   async createPoll(
     user: UserDto,
-    createPollDto: CreateDraftPollDto,
+    createPollDto: Partial<CreatePollDto>,
     picturesUrl: string[],
     backgroundUrl: string | null,
   ) {
-    let answerOptions = [];
-    let invitedUsers = [];
-    const payload = {
-      title: createPollDto.title,
-      question: createPollDto.question,
-      answerType: createPollDto.answerType,
-      backgroundUrl: backgroundUrl,
-      startDate: createPollDto.startDate,
-      endDate: createPollDto.endDate,
-      isPublic: createPollDto.isPublic,
-      status: createPollDto.status,
-    };
-
-    if (createPollDto.answerType !== AnswerType.input) {
-      answerOptions = createPollDto.answerOptions.map(
-        (answerOption): CreateAnswerOptionDto => {
-          if (
-            picturesUrl[answerOption.imageIndex] === undefined &&
-            answerOption.imageIndex !== undefined
-          ) {
-            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
-          }
-          return {
-            content: answerOption.content,
-            pictureUrl: picturesUrl[answerOption.imageIndex],
-          };
-        },
-      );
-    }
-    if (createPollDto.isPublic === true) {
-      const users = await this.usersService.getAllUsers();
-      invitedUsers = users.map((user) => {
-        return { id: user.id };
-      });
-    } else {
-      invitedUsers = createPollDto.invitedUsers.map((userId) => {
-        return { id: userId };
-      });
-    }
+    const data = await this.getPrismaPollData(
+      createPollDto,
+      picturesUrl,
+      backgroundUrl,
+    );
 
     const poll = await this.prisma.poll.create({
       data: {
-        ...payload,
+        ...data.payload,
         author: { connect: { id: user.id } },
         answerOptions: {
-          create: answerOptions,
+          create: data.answerOptions,
         },
         invitedUsers: {
-          connect: invitedUsers,
+          connect: data.invitedUsers,
         },
       },
       include: {
@@ -118,6 +84,58 @@ export class PollsService {
       nextPage,
       prevPage,
       polls: polls.map((poll) => new PollDto(poll)),
+    };
+  }
+
+  async getPrismaPollData(
+    pollDto: Partial<CreatePollDto>,
+    picturesUrl: string[],
+    backgroundUrl: string | null,
+  ) {
+    let answerOptions = [];
+    let invitedUsers = [];
+
+    const payload = {
+      title: pollDto.title,
+      question: pollDto.question,
+      answerType: pollDto.answerType,
+      backgroundUrl: backgroundUrl,
+      startDate: pollDto.startDate,
+      endDate: pollDto.endDate,
+      isPublic: pollDto.isPublic,
+      status: pollDto.status,
+    };
+
+    if (pollDto.answerType !== AnswerType.input) {
+      answerOptions = pollDto.answerOptions.map(
+        (answerOption): CreateAnswerOptionDto => {
+          if (
+            picturesUrl[answerOption.imageIndex] === undefined &&
+            answerOption.imageIndex !== undefined
+          ) {
+            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
+          }
+          return {
+            content: answerOption.content,
+            pictureUrl: picturesUrl[answerOption.imageIndex],
+          };
+        },
+      );
+    }
+    if (pollDto.isPublic === true) {
+      const users = await this.usersService.getAllUsers();
+      invitedUsers = users.map((user) => {
+        return { id: user.id };
+      });
+    } else {
+      invitedUsers = pollDto.invitedUsers.map((userId) => {
+        return { id: userId };
+      });
+    }
+    return {
+      payload,
+      answerOptions,
+      invitedUsers,
     };
   }
 

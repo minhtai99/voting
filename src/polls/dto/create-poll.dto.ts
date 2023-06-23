@@ -43,7 +43,7 @@ export class CreatePollDto {
   @IsDate()
   @Transform(({ value }) => value && new Date(value))
   @IsOptional()
-  @ApiProperty({ required: false, default: new Date() })
+  @ApiProperty({ required: false })
   startDate: Date;
 
   @GreaterComparison<CreatePollDto>('startDate')

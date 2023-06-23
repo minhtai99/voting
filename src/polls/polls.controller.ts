@@ -54,10 +54,11 @@ export class PollsController {
     },
   ) {
     try {
-      const filesUrl = this.filesService.getPictureUrlAndBackgroundUrl(
-        images.pictures,
-        images.background,
-      );
+      const { picturesUrl, backgroundUrl } =
+        this.filesService.getPictureUrlAndBackgroundUrl(
+          images.pictures,
+          images.background,
+        );
       if (createPollDto.startDate === undefined) {
         createPollDto.status = PollStatus.ongoing;
       } else {
@@ -67,8 +68,8 @@ export class PollsController {
       return this.pollsService.createPoll(
         user,
         createPollDto,
-        filesUrl.picturesUrl,
-        filesUrl.backgroundUrl,
+        picturesUrl,
+        backgroundUrl,
       );
     } catch {
       if (images !== undefined) {
