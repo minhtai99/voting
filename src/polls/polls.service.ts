@@ -5,6 +5,7 @@ import { CreateAnswerOptionDto } from 'src/answer-option/dto/create-answer-optio
 import { PollDto } from './dto/poll.dto';
 import {
   MSG_ERROR_IMAGE_INDEX,
+  MSG_INVALID_PICTURES_FIELD,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from 'src/constants/message.constant';
 import { AnswerType } from '@prisma/client';
@@ -132,6 +133,7 @@ export class PollsService {
         picturesUrl.forEach((url) => {
           fs.unlink(`${destination}/${url}`, (err) => err);
         });
+        throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
       }
     }
     if (pollDto.isPublic === true) {
