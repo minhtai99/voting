@@ -49,9 +49,32 @@ export class FilesService {
         cb(null, uploadPath);
       },
       filename: (req: any, file: any, cb: any) => {
-        const originalname = file.originalname.replace(' ', '');
+        const originalname = file.originalname.replace(/\s+/g, '');
         cb(null, `${uuid()}-${originalname}`);
       },
     });
+  }
+
+  getPictureUrlAndBackgroundUrl(
+    pictures: Express.Multer.File[],
+    background: Express.Multer.File[],
+  ) {
+    let picturesUrl = [];
+    let backgroundUrl = null;
+    if (pictures !== undefined) {
+      picturesUrl = pictures.map((picture) => {
+        if (picture === undefined) return null;
+        return picture.path.slice(picture.path.indexOf('images'));
+      });
+    }
+    if (background !== undefined) {
+      backgroundUrl = background[0].path.slice(
+        background[0].path.indexOf('images'),
+      );
+    }
+    return {
+      picturesUrl,
+      backgroundUrl,
+    };
   }
 }

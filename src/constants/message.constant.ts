@@ -26,3 +26,4 @@ export const MSG_UPDATE_FAIL = 'Update fail';
 export const MSG_FILE_UPLOAD_FAILED = 'File upload failed';
 export const MSG_CURRENT_PASSWORD_INCORRECT = 'Current password incorrect!';
 export const MSG_ERROR_IMAGE_INDEX = 'Image not found';
+export const MSG_INVALID_PICTURES_FIELD = 'Invalid pictures field';

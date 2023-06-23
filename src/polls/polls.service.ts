@@ -1,79 +1,49 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserDto } from 'src/users/dto/user.dto';
-import { CreatePollDto } from './dto/create-poll.dto';
 import { CreateAnswerOptionDto } from 'src/answer-option/dto/create-answer-option.dto';
 import { PollDto } from './dto/poll.dto';
 import {
   MSG_ERROR_IMAGE_INDEX,
+  MSG_INVALID_PICTURES_FIELD,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from 'src/constants/message.constant';
 import { AnswerType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
+import { CreatePollDto } from './dto/create-poll.dto';
+import * as fs from 'fs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PollsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createPoll(
     user: UserDto,
-    createPollDto: CreatePollDto,
+    createPollDto: Partial<CreatePollDto>,
     picturesUrl: string[],
     backgroundUrl: string | null,
   ) {
-    let answerOptions = [];
-    let invitedUsers = [];
-    const payload = {
-      title: createPollDto.title,
-      question: createPollDto.question,
-      answerType: createPollDto.answerType,
-      backgroundUrl: backgroundUrl,
-      startDate: createPollDto.startDate,
-      endDate: createPollDto.endDate,
-      isPublic: createPollDto.isPublic,
-      status: createPollDto.status,
-    };
-
-    if (createPollDto.answerType !== AnswerType.input) {
-      answerOptions = createPollDto.answerOptions.map(
-        (answerOption): CreateAnswerOptionDto => {
-          if (
-            picturesUrl[answerOption.imageIndex] === undefined &&
-            answerOption.imageIndex !== undefined
-          ) {
-            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
-          }
-          return {
-            content: answerOption.content,
-            pictureUrl: picturesUrl[answerOption.imageIndex],
-          };
-        },
-      );
-    }
-    if (createPollDto.isPublic === true) {
-      const users = await this.usersService.getAllUsers();
-      invitedUsers = users.map((user) => {
-        return { id: user.id };
-      });
-    } else {
-      invitedUsers = createPollDto.invitedUsers.map((userId) => {
-        return { id: userId };
-      });
-    }
+    const data = await this.getPrismaPollData(
+      createPollDto,
+      picturesUrl,
+      backgroundUrl,
+    );
 
     const poll = await this.prisma.poll.create({
       data: {
-        ...payload,
+        ...data.payload,
         author: { connect: { id: user.id } },
         answerOptions: {
-          create: answerOptions,
+          create: data.answerOptions,
         },
         invitedUsers: {
-          connect: invitedUsers,
+          connect: data.invitedUsers,
         },
       },
       include: {
@@ -118,6 +88,68 @@ export class PollsService {
       nextPage,
       prevPage,
       polls: polls.map((poll) => new PollDto(poll)),
+    };
+  }
+
+  async getPrismaPollData(
+    pollDto: Partial<CreatePollDto>,
+    picturesUrl: string[],
+    backgroundUrl: string | null,
+  ) {
+    let answerOptions = [];
+    let invitedUsers = [];
+
+    const payload = {
+      title: pollDto.title,
+      question: pollDto.question,
+      answerType: pollDto.answerType,
+      backgroundUrl: backgroundUrl,
+      startDate: pollDto.startDate,
+      endDate: pollDto.endDate,
+      isPublic: pollDto.isPublic,
+      status: pollDto.status,
+    };
+
+    if (pollDto.answerType !== AnswerType.input) {
+      answerOptions = pollDto.answerOptions.map(
+        (answerOption): CreateAnswerOptionDto => {
+          if (
+            picturesUrl[answerOption.imageIndex] === undefined &&
+            answerOption.imageIndex !== undefined
+          ) {
+            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
+          }
+          return {
+            content: answerOption.content,
+            pictureUrl: picturesUrl[answerOption.imageIndex],
+          };
+        },
+      );
+    } else {
+      if (picturesUrl.length !== 0) {
+        const destination = this.configService.get(
+          'UPLOADED_FILES_DESTINATION',
+        );
+        picturesUrl.forEach((url) => {
+          fs.unlink(`${destination}/${url}`, (err) => err);
+        });
+        throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
+      }
+    }
+    if (pollDto.isPublic === true) {
+      const users = await this.usersService.getAllUsers();
+      invitedUsers = users.map((user) => {
+        return { id: user.id };
+      });
+    } else {
+      invitedUsers = pollDto.invitedUsers.map((userId) => {
+        return { id: userId };
+      });
+    }
+    return {
+      payload,
+      answerOptions,
+      invitedUsers,
     };
   }
 

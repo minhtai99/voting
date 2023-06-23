@@ -44,8 +44,8 @@ model Poll {
   updatedAt DateTime @updatedAt()
 
   title         String
-  question      String
-  answerType    AnswerType
+  question      String?
+  answerType    AnswerType?
   backgroundUrl String?
   startDate     DateTime?
   endDate       DateTime?

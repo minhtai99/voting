@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AnswerType } from '@prisma/client';
+import { AnswerType, PollStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -17,10 +17,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { GreaterComparison } from 'src/decorators/greater-comparison.decorator';
-import { StatusCreatePoll } from '../polls.enum';
 import { RequestAnswerOption } from 'src/answer-option/dto/request-answer-option.dto';
 
 export class CreatePollDto {
+  status: PollStatus;
+
   @MaxLength(200)
   @IsString()
   @IsNotEmpty()
@@ -41,16 +42,16 @@ export class CreatePollDto {
   @MinDate(new Date())
   @IsDate()
   @Transform(({ value }) => value && new Date(value))
-  @IsNotEmpty()
-  @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
-  @ApiProperty()
+  @IsOptional()
+  @ApiProperty({ required: false })
   startDate: Date;
 
   @GreaterComparison<CreatePollDto>('startDate')
+  @ValidateIf((e) => e.startDate)
+  @MinDate(new Date())
   @IsDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
-  @ValidateIf((e) => e.status === StatusCreatePoll.Pending)
   @ApiProperty()
   endDate: Date;
 
@@ -59,11 +60,6 @@ export class CreatePollDto {
   @IsOptional()
   @ApiProperty({ required: false, default: false })
   isPublic?: boolean = false;
-
-  @IsEnum(StatusCreatePoll)
-  @IsNotEmpty()
-  @ApiProperty({ enum: StatusCreatePoll })
-  status: StatusCreatePoll;
 
   @ArrayMinSize(1)
   @IsArray()
