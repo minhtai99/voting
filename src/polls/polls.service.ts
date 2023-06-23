@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserDto } from 'src/users/dto/user.dto';
-import { CreatePollDto } from './dto/create-poll.dto';
+import { CreateDraftPollDto } from './dto/create-draft-poll.dto';
 import { CreateAnswerOptionDto } from 'src/answer-option/dto/create-answer-option.dto';
 import { PollDto } from './dto/poll.dto';
 import {
@@ -21,7 +21,7 @@ export class PollsService {
 
   async createPoll(
     user: UserDto,
-    createPollDto: CreatePollDto,
+    createPollDto: CreateDraftPollDto,
     picturesUrl: string[],
     backgroundUrl: string | null,
   ) {
