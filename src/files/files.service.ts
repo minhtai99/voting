@@ -2,7 +2,7 @@ import { diskStorage } from 'multer';
 import { v4 as uuid } from 'uuid';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
-import { fileFilter, multerConfig } from 'src/helpers/files.helper';
+import { fileFilter, multerConfig } from '../helpers/files.helper';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 
 interface UploadFile {

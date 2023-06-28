@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 import {
   MSG_EMPTY_COMPARE_DATA,
   MSG_EMPTY_HASH_DATA,
-} from 'src/constants/message.constant';
+} from '../constants/message.constant';
 
 export const hashData = async (data: string | null): Promise<string> => {
   if (!data) {

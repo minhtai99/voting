@@ -8,16 +8,16 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateDraftPollDto } from './dto/create-draft-poll.dto';
-import { UserDto } from 'src/users/dto/user.dto';
-import { User } from 'src/decorators/user.decorator';
+import { UserDto } from '../users/dto/user.dto';
+import { User } from '../decorators/user.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { FilesService } from 'src/files/files.service';
-import { FieldName } from 'src/files/files.enum';
+import { FilesService } from '../files/files.service';
+import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
-import { MSG_FILE_UPLOAD_FAILED } from 'src/constants/message.constant';
+import { MSG_FILE_UPLOAD_FAILED } from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';

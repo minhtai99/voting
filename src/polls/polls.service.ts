@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UserDto } from 'src/users/dto/user.dto';
-import { CreateAnswerOptionDto } from 'src/answer-option/dto/create-answer-option.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserDto } from '../users/dto/user.dto';
+import { CreateAnswerOptionDto } from '../answer-option/dto/create-answer-option.dto';
 import { PollDto } from './dto/poll.dto';
 import {
   MSG_ERROR_IMAGE_INDEX,
   MSG_INVALID_PICTURES_FIELD,
   MSG_SUCCESSFUL_POLL_CREATION,
-} from 'src/constants/message.constant';
+} from '../constants/message.constant';
 import { AnswerType } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
 import * as fs from 'fs';

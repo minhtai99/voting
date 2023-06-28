@@ -1,4 +1,4 @@
-import { FieldName } from 'src/files/files.enum';
+import { FieldName } from '../files/files.enum';
 
 export const fileFilter = (fieldname: FieldName, mimetype: string): boolean => {
   if (fieldname === FieldName.AVATAR) {
