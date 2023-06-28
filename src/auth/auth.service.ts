@@ -1,4 +1,4 @@
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from './../users/users.service';
 import {
   BadRequestException,
@@ -9,7 +9,7 @@ import { LoginAuthDto } from './dto/login-auth.dto';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { compareHashedData } from 'src/helpers/hash.helper';
+import { compareHashedData } from '../helpers/hash.helper';
 import { TokenType } from './auth.enum';
 import {
   MSG_EMAIL_ALREADY_EXISTS,
@@ -26,12 +26,12 @@ import {
   MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
   MSG_WRONG_PASSWORD,
-} from 'src/constants/message.constant';
-import { UserDto } from 'src/users/dto/user.dto';
-import { MailEvent } from 'src/mails/mails.enum';
+} from '../constants/message.constant';
+import { UserDto } from '../users/dto/user.dto';
+import { MailEvent } from '../mails/mails.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResetPassDto } from './dto/reset-password.dto';
-import { MailForgotPassPayload } from 'src/interfaces/send-mail.interface';
+import { MailForgotPassPayload } from '../interfaces/send-mail.interface';
 
 interface JwtPayload {
   id: number;

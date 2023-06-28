@@ -16,8 +16,8 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { GreaterComparison } from 'src/decorators/greater-comparison.decorator';
-import { RequestAnswerOption } from 'src/answer-option/dto/request-answer-option.dto';
+import { GreaterComparison } from '../../decorators/greater-comparison.decorator';
+import { RequestAnswerOption } from '../../answer-option/dto/request-answer-option.dto';
 
 export class CreatePollDto {
   status: PollStatus;

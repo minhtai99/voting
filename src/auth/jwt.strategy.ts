@@ -3,8 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/users/users.service';
-import { MSG_USER_NOT_FOUND } from 'src/constants/message.constant';
+import { UsersService } from '../users/users.service';
+import { MSG_USER_NOT_FOUND } from '../constants/message.constant';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {

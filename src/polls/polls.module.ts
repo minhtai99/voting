@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { PollsController } from './polls.controller';
-import { UsersModule } from 'src/users/users.module';
-import { FilesModule } from 'src/files/files.module';
+import { UsersModule } from '../users/users.module';
+import { FilesModule } from '../files/files.module';
 
 @Module({
   imports: [UsersModule, FilesModule],

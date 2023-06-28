@@ -4,8 +4,8 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { compareHashedData, hashData } from 'src/helpers/hash.helper';
+import { PrismaService } from '../prisma/prisma.service';
+import { compareHashedData, hashData } from '../helpers/hash.helper';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
 import {
@@ -13,7 +13,7 @@ import {
   MSG_CURRENT_PASSWORD_INCORRECT,
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
-} from 'src/constants/message.constant';
+} from '../constants/message.constant';
 import { ChangePassDto } from './dto/change-password.dto';
 
 @Injectable()

@@ -11,16 +11,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { UserDto } from './dto/user.dto';
-import { User } from 'src/decorators/user.decorator';
+import { User } from '../decorators/user.decorator';
 import { UsersService } from './users.service';
 import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilesService } from 'src/files/files.service';
-import { FieldName } from 'src/files/files.enum';
+import { FilesService } from '../files/files.service';
+import { FieldName } from '../files/files.enum';
 import { ProfileService } from './profile.service';
-import { MSG_FILE_UPLOAD_FAILED } from 'src/constants/message.constant';
+import { MSG_FILE_UPLOAD_FAILED } from '../constants/message.constant';
 
 @UseGuards(JwtAuthGuard)
 @Controller('profile')

@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Poll, PollStatus, AnswerType } from '@prisma/client';
-import { AnswerOptionDto } from 'src/answer-option/dto/answer-option.dto';
-import { UserDto } from 'src/users/dto/user.dto';
-import { VoteDto } from 'src/votes/dto/vote.dto';
+import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
+import { UserDto } from '../../users/dto/user.dto';
+import { VoteDto } from '../../votes/dto/vote.dto';
 
 export class PollDto implements Poll {
   constructor({ author, invitedUsers, ...data }: Partial<PollDto>) {

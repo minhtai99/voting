@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Vote } from '@prisma/client';
-import { AnswerOptionDto } from 'src/answer-option/dto/answer-option.dto';
-import { UserDto } from 'src/users/dto/user.dto';
+import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
+import { UserDto } from '../../users/dto/user.dto';
 
 export class VoteDto implements Vote {
   constructor({ participant, ...data }: Partial<VoteDto>) {
