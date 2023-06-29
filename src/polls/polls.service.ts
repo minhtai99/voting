@@ -131,8 +131,18 @@ export class PollsService {
           'UPLOADED_FILES_DESTINATION',
         );
         picturesUrl.forEach((url) => {
-          fs.unlink(`${destination}/${url}`, (err) => err);
+          fs.unlink(
+            `${destination}/${url.slice(url.indexOf('images'))}`,
+            (err) => err,
+          );
         });
+
+        fs.unlink(
+          `${destination}/${backgroundUrl.slice(
+            backgroundUrl.indexOf('images'),
+          )}`,
+          (err) => err,
+        );
         throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
       }
     }

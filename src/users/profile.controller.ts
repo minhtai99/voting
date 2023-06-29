@@ -1,3 +1,5 @@
+import { fileConfig } from './../helpers/files.helper';
+import { ConfigService } from '@nestjs/config';
 import { ChangePassDto } from './dto/change-password.dto';
 import {
   Body,
@@ -29,6 +31,7 @@ export class ProfileController {
   constructor(
     private readonly usersService: UsersService,
     private readonly profileService: ProfileService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get()
@@ -56,9 +59,9 @@ export class ProfileController {
     @UploadedFile() avatar: Express.Multer.File,
   ) {
     try {
-      const avatarUrl = avatar.path.slice(
-        avatar.path.indexOf(avatar.fieldname),
-      );
+      const avatarUrl =
+        fileConfig.domain +
+        avatar.path.slice(avatar.path.indexOf(avatar.fieldname));
       const userUpdated = await this.usersService.updateUser(user, {
         avatarUrl,
       });
