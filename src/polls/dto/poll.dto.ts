@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Poll, PollStatus, AnswerType } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
 import { UserDto } from '../../users/dto/user.dto';
-import { VoteDto } from '../../votes/dto/vote.dto';
 
 export class PollDto implements Poll {
   constructor({ author, invitedUsers, ...data }: Partial<PollDto>) {
@@ -59,9 +58,6 @@ export class PollDto implements Poll {
 
   @ApiProperty({ isArray: true, type: AnswerOptionDto })
   answerOptions?: AnswerOptionDto[];
-
-  @ApiProperty({ isArray: true, type: VoteDto })
-  votes: VoteDto[];
 
   @ApiProperty({ type: UserDto })
   author: UserDto;

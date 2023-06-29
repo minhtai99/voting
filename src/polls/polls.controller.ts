@@ -6,6 +6,8 @@ import {
   UploadedFiles,
   UseInterceptors,
   InternalServerErrorException,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -61,6 +63,7 @@ export class PollsController {
         );
       if (createPollDto.startDate === undefined) {
         createPollDto.status = PollStatus.ongoing;
+        createPollDto.startDate = new Date();
       } else {
         createPollDto.status = PollStatus.pending;
       }
@@ -154,5 +157,10 @@ export class PollsController {
       ...filterPollDto.where,
     };
     return this.pollsService.getPollList(filterPollDto);
+  }
+
+  @Get(':id')
+  getPollById(@Param('id') id: string) {
+    return this.pollsService.findPollById(+id);
   }
 }
