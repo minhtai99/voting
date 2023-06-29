@@ -10,6 +10,7 @@ export class ProfileService {
   deleteAvatarFile(user: UserDto) {
     if (!user.avatarUrl) return;
     const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-    fs.unlink(`${destination}/${user.avatarUrl}`, (err) => err);
+    const avatarUrl = user.avatarUrl.slice(user.avatarUrl.indexOf('avatars'));
+    fs.unlink(`${destination}/${avatarUrl}`, (err) => err);
   }
 }

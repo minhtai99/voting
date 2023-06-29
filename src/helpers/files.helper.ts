@@ -10,6 +10,7 @@ export const fileFilter = (fieldname: FieldName, mimetype: string): boolean => {
   return false;
 };
 
-export const multerConfig = {
+export const fileConfig = {
   dest: process.env.UPLOADED_FILES_DESTINATION,
+  domain: process.env.API_SERVER_URL + '\\',
 };

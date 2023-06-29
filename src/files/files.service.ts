@@ -2,7 +2,7 @@ import { diskStorage } from 'multer';
 import { v4 as uuid } from 'uuid';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
-import { fileFilter, multerConfig } from '../helpers/files.helper';
+import { fileConfig, fileFilter } from '../helpers/files.helper';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 
 interface UploadFile {
@@ -38,7 +38,7 @@ export class FilesService {
   }
 
   static configDiskStorage(folder: string) {
-    const destination = `${multerConfig.dest}/${folder}`;
+    const destination = `${fileConfig.dest}/${folder}`;
 
     return diskStorage({
       destination: (req: any, file: any, cb: any) => {
@@ -64,13 +64,15 @@ export class FilesService {
     if (pictures !== undefined) {
       picturesUrl = pictures.map((picture) => {
         if (picture === undefined) return null;
-        return picture.path.slice(picture.path.indexOf('images'));
+        return (
+          fileConfig.domain + picture.path.slice(picture.path.indexOf('images'))
+        );
       });
     }
     if (background !== undefined) {
-      backgroundUrl = background[0].path.slice(
-        background[0].path.indexOf('images'),
-      );
+      backgroundUrl =
+        fileConfig.domain +
+        background[0].path.slice(background[0].path.indexOf('images'));
     }
     return {
       picturesUrl,
