@@ -1,9 +1,11 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailsService } from '../../mails/mails.service';
 import { MailEvent } from '../mails.enum';
-import { MSG_ERROR_SEND_MAIL } from '../../constants/message.constant';
-import { MailForgotPassPayload } from '../../interfaces/send-mail.interface';
+import {
+  MailForgotPassPayload,
+  MailInvitationVotePayload,
+} from '../interfaces/send-mail.interface';
 
 @Injectable()
 export class MailListener {
@@ -16,8 +18,17 @@ export class MailListener {
       const { receiver, token } = payload;
       this.logger.log(`Send verification email : ${receiver.email}`);
       await this.mailService.sendEmailForgotPass(receiver, token);
-    } catch {
-      throw new BadRequestException(MSG_ERROR_SEND_MAIL);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  @OnEvent(MailEvent.SEND_MAIL_INVITATION_VOTE)
+  async handleSendEmailInvitationVote(payload: MailInvitationVotePayload) {
+    try {
+      await this.mailService.sendEmailStartedPoll(payload);
+    } catch (error) {
+      this.logger.error(error);
     }
   }
 }

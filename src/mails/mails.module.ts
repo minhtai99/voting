@@ -1,3 +1,4 @@
+import { PollsModule } from './../polls/polls.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { Global, Module } from '@nestjs/common';
@@ -32,6 +33,7 @@ import { MailListener } from './listeners/mail.listener';
       }),
       inject: [ConfigService],
     }),
+    PollsModule,
   ],
   controllers: [],
   providers: [MailsService, MailListener],

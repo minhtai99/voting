@@ -79,10 +79,9 @@ model Vote {
 
   input String?
 
-  answerOption   AnswerOption? @relation(fields: [answerOptionId], references: [id])
-  answerOptionId Int?
-  poll           Poll          @relation(fields: [pollId], references: [id])
-  pollId         Int
-  participant    User          @relation(fields: [participantId], references: [id])
-  participantId  Int
+  answerOptions AnswerOption[]
+  poll          Poll           @relation(fields: [pollId], references: [id])
+  pollId        Int
+  participant   User           @relation(fields: [participantId], references: [id])
+  participantId Int
 }
