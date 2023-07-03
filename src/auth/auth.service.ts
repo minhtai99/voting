@@ -31,7 +31,7 @@ import { UserDto } from '../users/dto/user.dto';
 import { MailEvent } from '../mails/mails.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResetPassDto } from './dto/reset-password.dto';
-import { MailForgotPassPayload } from '../interfaces/send-mail.interface';
+import { MailForgotPassPayload } from '../mails/interfaces/send-mail.interface';
 
 interface JwtPayload {
   id: number;

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../users/dto/user.dto';
 import { CreateAnswerOptionDto } from '../answer-option/dto/create-answer-option.dto';
@@ -6,6 +10,7 @@ import { PollDto } from './dto/poll.dto';
 import {
   MSG_ERROR_IMAGE_INDEX,
   MSG_INVALID_PICTURES_FIELD,
+  MSG_POLL_NOT_FOUND,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from '../constants/message.constant';
 import { AnswerType } from '@prisma/client';
@@ -101,10 +106,14 @@ export class PollsService {
         author: true,
         answerOptions: true,
         invitedUsers: true,
-        votes: true,
+        votes: {
+          include: {
+            participant: true,
+          },
+        },
       },
     });
-    return new PollDto(poll);
+    return poll;
   }
 
   async getPrismaPollData(
@@ -177,6 +186,46 @@ export class PollsService {
       answerOptions,
       invitedUsers,
     };
+  }
+
+  async updatePrismaPoll(payload: { where: any; data: any }) {
+    try {
+      const updatePoll = await this.prisma.poll.update({
+        where: payload.where,
+        data: payload.data,
+        include: {
+          author: true,
+          answerOptions: true,
+          invitedUsers: true,
+        },
+      });
+      return new PollDto(updatePoll);
+    } catch {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
+  }
+
+  async getAllPollForSchedule() {
+    const current = new Date();
+    const polls = await this.prisma.poll.findMany({
+      where: {
+        OR: [
+          {
+            startDate: {
+              gte: new Date(current.getTime() - 60000 * 6), // current - 6m
+              lte: new Date(current.getTime()),
+            },
+            status: 'pending',
+          },
+        ],
+      },
+      include: {
+        votes: true,
+        author: true,
+        invitedUsers: true,
+      },
+    });
+    return polls.map((poll) => new PollDto(poll));
   }
 
   filterParticipantPoll(userId: number) {
