@@ -8,6 +8,8 @@ import {
   InternalServerErrorException,
   Get,
   Param,
+  ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -19,10 +21,15 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
-import { MSG_FILE_UPLOAD_FAILED } from '../constants/message.constant';
+import {
+  MSG_FILE_UPLOAD_FAILED,
+  MSG_POLL_NOT_FOUND,
+} from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';
+import { PollDto } from './dto/poll.dto';
+import { UploadFilesErrorsInterceptor } from './interceptors/poll-errors.interceptor';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -35,6 +42,7 @@ export class PollsController {
 
   @Post()
   @UseInterceptors(
+    new UploadFilesErrorsInterceptor(),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -90,6 +98,7 @@ export class PollsController {
 
   @Post('draft')
   @UseInterceptors(
+    new UploadFilesErrorsInterceptor(),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -160,7 +169,11 @@ export class PollsController {
   }
 
   @Get(':id')
-  getPollById(@Param('id') id: string) {
-    return this.pollsService.findPollById(+id);
+  async getPollById(@Param('id', ParseIntPipe) id: number) {
+    try {
+      return new PollDto(await this.pollsService.findPollById(id));
+    } catch {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
   }
 }
