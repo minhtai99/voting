@@ -13,7 +13,7 @@ import {
   MSG_POLL_NOT_FOUND,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from '../constants/message.constant';
-import { AnswerType } from '@prisma/client';
+import { AnswerType, PollStatus } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
@@ -186,6 +186,13 @@ export class PollsService {
       answerOptions,
       invitedUsers,
     };
+  }
+
+  async updatePollStatus(pollId: number, status: PollStatus) {
+    await this.updatePrismaPoll({
+      where: { id: pollId },
+      data: { status },
+    });
   }
 
   async updatePrismaPoll(payload: { where: any; data: any }) {

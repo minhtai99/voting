@@ -17,11 +17,11 @@ export class PollSchedule {
 
   @Cron('0 */5 * * * *')
   async pollStatusEventHandler() {
-    try {
-      const polls = await this.pollsService.getAllPollForSchedule();
+    const polls = await this.pollsService.getAllPollForSchedule();
+    Promise.all(
       polls.map(async (poll) => {
         if (poll.status === PollStatus.pending) {
-          this.updateStatusPoll(poll.id, PollStatus.ongoing);
+          await this.pollsService.updatePollStatus(poll.id, PollStatus.ongoing);
 
           const invitationVotePayload: MailInvitationVotePayload = {
             inviter: poll.author,
@@ -33,17 +33,13 @@ export class PollSchedule {
             invitationVotePayload,
           );
         }
+      }),
+    )
+      .then(() => {
+        this.logger.log('Poll status event handler');
+      })
+      .catch((error) => {
+        this.logger.error(error);
       });
-      this.logger.log('Poll status event handler');
-    } catch (error) {
-      this.logger.error(error);
-    }
-  }
-
-  async updateStatusPoll(pollId: number, status: PollStatus) {
-    await this.pollsService.updatePrismaPoll({
-      where: { id: pollId },
-      data: { status },
-    });
   }
 }
