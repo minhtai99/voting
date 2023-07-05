@@ -9,6 +9,8 @@ export const MSG_PASSWORD_RESET_SUCCESSFUL = 'Password reset successful';
 export const MSG_UPDATE_SUCCESSFUL = 'Update successful';
 export const MSG_CHANGE_PASSWORD_SUCCESSFUL = 'Change password successfully';
 export const MSG_SUCCESSFUL_POLL_CREATION = 'Posted successfully!';
+export const MSG_DELETE_VOTE_SUCCESSFUL = 'Deleted vote successfully';
+export const MSG_SUCCESSFUL_VOTE_CREATION = 'Voted successfully!';
 // Error message
 export const MSG_WRONG_PASSWORD = 'Your email/password is incorrect';
 export const MSG_EMAIL_NOT_EXISTED = 'Email not existed';
@@ -27,3 +29,6 @@ export const MSG_CURRENT_PASSWORD_INCORRECT = 'Current password incorrect!';
 export const MSG_ERROR_IMAGE_INDEX = 'Image not found';
 export const MSG_INVALID_PICTURES_FIELD = 'Invalid pictures field';
 export const MSG_POLL_NOT_FOUND = 'Poll not found';
+export const MSG_VOTE_NOT_FOUND = 'Vote not found';
+export const MSG_USER_NOT_AUTHOR = 'You are not the author of the vote';
+export const MSG_USER_VOTED = 'You voted for this poll';

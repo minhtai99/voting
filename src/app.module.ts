@@ -12,6 +12,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PollsModule } from './polls/polls.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { VotesModule } from './votes/votes.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     }),
     PollsModule,
     ScheduleModule.forRoot(),
+    VotesModule,
   ],
   controllers: [],
   providers: [
