@@ -13,8 +13,8 @@ export class IsAuthorGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const body = request.body;
-    const vote = await this.votesService.findVoteById(body.voteId);
+    const voteId = request.params.id ?? request.body.voteId;
+    const vote = await this.votesService.findVoteById(+voteId);
     if (user.id !== vote.participantId) {
       throw new ForbiddenException(MSG_USER_NOT_AUTHOR);
     }
