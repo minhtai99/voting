@@ -9,7 +9,6 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
-  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -18,7 +17,6 @@ import { CreateVoteDto } from './dto/create-vote.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
 import { VoteDto } from './dto/vote.dto';
-import { UpdateVoteDto } from './dto/update-vote.dto';
 import { IsAuthorGuard } from './is-author.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -28,8 +26,11 @@ export class VotesController {
   constructor(private readonly votesService: VotesService) {}
 
   @Post()
-  createVote(@User() user: UserDto, @Body() createVoteDto: CreateVoteDto) {
-    return this.votesService.createVote(user, createVoteDto);
+  createAndUpdateVote(
+    @User() user: UserDto,
+    @Body() createVoteDto: CreateVoteDto,
+  ) {
+    return this.votesService.createAndUpdateVote(user, createVoteDto);
   }
 
   @Get(':id')
@@ -40,12 +41,6 @@ export class VotesController {
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }
-  }
-
-  @Patch()
-  @UseGuards(IsAuthorGuard)
-  async updateVote(@Body() updateVoteDto: UpdateVoteDto) {
-    return this.votesService.updateVote(updateVoteDto);
   }
 
   @Delete(':id')

@@ -1,8 +1,7 @@
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
+  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
-  MSG_UPDATE_SUCCESSFUL,
-  MSG_USER_VOTED,
 } from '../constants/message.constant';
 import { PollsService } from '../polls/polls.service';
 import { UserDto } from '../users/dto/user.dto';
@@ -10,7 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
-import { AnswerType } from '@prisma/client';
+import { AnswerType, PollStatus } from '@prisma/client';
 import { UpdateVoteDto } from './dto/update-vote.dto';
 
 @Injectable()
@@ -20,19 +19,27 @@ export class VotesService {
     private readonly pollsService: PollsService,
   ) {}
 
-  async createVote(user: UserDto, createVoteDto: CreateVoteDto) {
-    const voteExisted = await this.prisma.vote.findFirst({
-      where: { participantId: user.id },
-    });
-    if (voteExisted) {
-      throw new BadRequestException(MSG_USER_VOTED);
-    }
-
+  async createAndUpdateVote(user: UserDto, createVoteDto: CreateVoteDto) {
     const poll = await this.pollsService.findPollById(createVoteDto.pollId);
+    if (poll.status !== PollStatus.ongoing) {
+      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
+    }
     this.checkAnswerType(poll.answerType, createVoteDto);
 
-    const vote = await this.prisma.vote.create({
-      data: {
+    const vote = await this.prisma.vote.upsert({
+      where: {
+        pollId_participantId: {
+          participantId: user.id,
+          pollId: createVoteDto.pollId,
+        },
+      },
+      update: {
+        input: createVoteDto.input,
+        answerOptions: {
+          set: createVoteDto.answerOptions.map((id) => ({ id })),
+        },
+      },
+      create: {
         poll: { connect: { id: createVoteDto.pollId } },
         input: createVoteDto.input,
         participant: { connect: { id: user.id } },
@@ -42,7 +49,11 @@ export class VotesService {
       },
       include: {
         answerOptions: true,
-        poll: true,
+        poll: {
+          include: {
+            author: true,
+          },
+        },
       },
     });
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
@@ -63,33 +74,6 @@ export class VotesService {
         },
       },
     });
-  }
-
-  async updateVote(updateVoteDto: UpdateVoteDto) {
-    const vote = await this.findVoteById(updateVoteDto.voteId);
-    this.checkAnswerType(vote.poll.answerType, updateVoteDto);
-
-    const updateVote = await this.prisma.vote.update({
-      where: {
-        id: updateVoteDto.voteId,
-      },
-      data: {
-        input: updateVoteDto.input,
-        answerOptions: {
-          set: updateVoteDto.answerOptions.map((id) => ({ id })),
-        },
-      },
-      include: {
-        participant: true,
-        answerOptions: true,
-        poll: {
-          include: {
-            author: true,
-          },
-        },
-      },
-    });
-    return { message: MSG_UPDATE_SUCCESSFUL, vote: new VoteDto(updateVote) };
   }
 
   async deleteVote(voteId: number) {
@@ -118,7 +102,7 @@ export class VotesService {
         );
       if (voteDto.answerOptions.length === 0) {
         throw new BadRequestException(
-          'AnswerOptions field must contain at least 1 elements',
+          'AnswerOptions field must contain at least 1 answer',
         );
       }
     }
