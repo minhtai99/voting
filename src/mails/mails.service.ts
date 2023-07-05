@@ -55,15 +55,9 @@ export class MailsService {
   }
 
   async getPollPermissionToken(poll: PollDto) {
-    const oneDay = 24 * 60 * 60 * 1000;
-    const firstDate = new Date(poll.endDate).getTime();
-    const secondDate = new Date(poll.startDate).getTime();
-    const expiresIn = Math.round(Math.abs((firstDate - secondDate) / oneDay));
-
     const pollPermissionJwt = this.authService.createJWT(
       { pollId: poll.id },
       TokenType.POLL_PERMISSION,
-      `${expiresIn + 1}d`,
     );
     await this.pollsService.updatePermissionTokenHash(
       poll.id,
