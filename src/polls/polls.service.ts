@@ -107,7 +107,6 @@ export class PollsService {
       token,
       TokenType.POLL_PERMISSION,
     );
-    console.log(payload.pollId);
 
     const poll = await this.findPollById(payload.pollId);
     if (!poll) {
