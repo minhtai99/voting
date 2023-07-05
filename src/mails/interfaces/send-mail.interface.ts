@@ -4,13 +4,3 @@ export interface MailForgotPassPayload {
   receiver: UserDto;
   token: string;
 }
-
-export interface MailInvitationVotePayload extends MailPollPayload {
-  invitedUsers: UserDto[];
-}
-
-export interface MailPollPayload {
-  inviter?: UserDto;
-  pollId: number;
-  receiver?: UserDto;
-}

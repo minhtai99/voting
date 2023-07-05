@@ -43,14 +43,15 @@ model Poll {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
 
-  title         String
-  question      String?
-  answerType    AnswerType?
-  backgroundUrl String?
-  startDate     DateTime?
-  endDate       DateTime?
-  isPublic      Boolean
-  status        PollStatus
+  title               String
+  question            String?
+  answerType          AnswerType?
+  backgroundUrl       String?
+  startDate           DateTime?
+  endDate             DateTime?
+  isPublic            Boolean
+  status              PollStatus
+  permissionTokenHash String?
 
   invitedUsers  User[]         @relation("InvitationToPoll")
   answerOptions AnswerOption[]

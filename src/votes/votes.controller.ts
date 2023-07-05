@@ -17,7 +17,6 @@ import { CreateVoteDto } from './dto/create-vote.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
 import { VoteDto } from './dto/vote.dto';
-import { IsAuthorGuard } from './is-author.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vote')
@@ -33,19 +32,20 @@ export class VotesController {
     return this.votesService.createAndUpdateVote(user, createVoteDto);
   }
 
-  @Get(':id')
-  @UseGuards(IsAuthorGuard)
-  async getVoteById(@Param('id', ParseIntPipe) id: number) {
+  @Get('/poll-id/:id')
+  async getVoteById(
+    @User() user: UserDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     try {
-      return new VoteDto(await this.votesService.findVoteById(id));
+      return new VoteDto(await this.votesService.findVoteByPollId(user, id));
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }
   }
 
-  @Delete(':id')
-  @UseGuards(IsAuthorGuard)
-  deleteVote(@Param('id', ParseIntPipe) id: number) {
-    return this.votesService.deleteVote(id);
+  @Delete('/poll-id/:id')
+  deleteVote(@User() user: UserDto, @Param('id', ParseIntPipe) id: number) {
+    return this.votesService.deleteVote(user, id);
   }
 }

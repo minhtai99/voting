@@ -195,11 +195,16 @@ export class AuthService {
     }
   }
 
-  createJWT(payload: JwtPayload, typeToken: TokenType) {
+  createJWT(
+    payload: JwtPayload | { pollId: number },
+    typeToken: TokenType,
+    expiresIn?: string,
+  ) {
     try {
       return this.jwtService.sign(payload, {
         secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-        expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
+        expiresIn:
+          expiresIn ?? this.configService.get(`EXPIRE_${typeToken}_JWT`),
       });
     } catch {
       throw new BadRequestException(MSG_ERROR_CREATE_TOKEN);

@@ -1,4 +1,3 @@
-import { MailInvitationVotePayload } from '../../mails/interfaces/send-mail.interface';
 import { MailEvent } from './../../mails/mails.enum';
 import { PollStatus } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
@@ -22,16 +21,7 @@ export class PollSchedule {
       polls.map(async (poll) => {
         if (poll.status === PollStatus.pending) {
           await this.pollsService.updatePollStatus(poll.id, PollStatus.ongoing);
-
-          const invitationVotePayload: MailInvitationVotePayload = {
-            inviter: poll.author,
-            invitedUsers: poll.invitedUsers,
-            pollId: poll.id,
-          };
-          this.eventEmitter.emit(
-            MailEvent.SEND_MAIL_INVITATION_VOTE,
-            invitationVotePayload,
-          );
+          this.eventEmitter.emit(MailEvent.SEND_MAIL_INVITATION_VOTE, poll.id);
         }
       }),
     )

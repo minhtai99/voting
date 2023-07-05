@@ -2,6 +2,7 @@ import {
   MSG_DELETE_VOTE_SUCCESSFUL,
   MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
+  MSG_VOTE_NOT_FOUND,
 } from '../constants/message.constant';
 import { PollsService } from '../polls/polls.service';
 import { UserDto } from '../users/dto/user.dto';
@@ -10,7 +11,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
-import { UpdateVoteDto } from './dto/update-vote.dto';
 
 @Injectable()
 export class VotesService {
@@ -59,10 +59,10 @@ export class VotesService {
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
   }
 
-  async findVoteById(voteId: number) {
+  async findVoteByPollId(user: UserDto, pollId: number) {
     return await this.prisma.vote.findUnique({
       where: {
-        id: voteId,
+        pollId_participantId: { participantId: user.id, pollId },
       },
       include: {
         participant: true,
@@ -76,17 +76,18 @@ export class VotesService {
     });
   }
 
-  async deleteVote(voteId: number) {
-    await this.prisma.vote.delete({
-      where: { id: voteId },
-    });
-    return { message: MSG_DELETE_VOTE_SUCCESSFUL };
+  async deleteVote(user: UserDto, pollId: number) {
+    try {
+      await this.prisma.vote.delete({
+        where: { pollId_participantId: { participantId: user.id, pollId } },
+      });
+      return { message: MSG_DELETE_VOTE_SUCCESSFUL };
+    } catch (error) {
+      throw new BadRequestException(MSG_VOTE_NOT_FOUND);
+    }
   }
 
-  checkAnswerType(
-    answerType: AnswerType,
-    voteDto: CreateVoteDto | UpdateVoteDto,
-  ) {
+  checkAnswerType(answerType: AnswerType, voteDto: CreateVoteDto) {
     if (answerType === AnswerType.input) {
       if (voteDto.answerOptions.length !== 0)
         throw new BadRequestException(

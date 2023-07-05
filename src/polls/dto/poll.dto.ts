@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Poll, PollStatus, AnswerType } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
 import { UserDto } from '../../users/dto/user.dto';
+import { Exclude } from 'class-transformer';
 
 export class PollDto implements Poll {
   constructor({ author, invitedUsers, ...data }: Partial<PollDto>) {
@@ -49,6 +50,9 @@ export class PollDto implements Poll {
 
   @ApiProperty()
   status: PollStatus;
+
+  @Exclude()
+  permissionTokenHash: string;
 
   @ApiProperty()
   authorId: number;

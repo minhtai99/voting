@@ -1,5 +1,8 @@
+import { AuthService } from 'src/auth/auth.service';
+import { compareHashedData, hashData } from './../helpers/hash.helper';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +15,7 @@ import {
   MSG_INVALID_PICTURES_FIELD,
   MSG_POLL_NOT_FOUND,
   MSG_SUCCESSFUL_POLL_CREATION,
+  MSG_TOKEN_DOES_NOT_MATCH,
 } from '../constants/message.constant';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { UsersService } from '../users/users.service';
@@ -19,6 +23,7 @@ import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
+import { TokenType } from 'src/auth/auth.enum';
 
 @Injectable()
 export class PollsService {
@@ -26,6 +31,7 @@ export class PollsService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
+    private readonly authService: AuthService,
   ) {}
 
   async createPoll(
@@ -96,6 +102,35 @@ export class PollsService {
     };
   }
 
+  async getPollById(user: UserDto, token: string) {
+    const payload = await this.authService.verifyToken(
+      token,
+      TokenType.POLL_PERMISSION,
+    );
+    console.log(payload.pollId);
+
+    const poll = await this.findPollById(payload.pollId);
+    if (!poll) {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
+
+    const isMatch = await compareHashedData(
+      token.slice(token.lastIndexOf('.')),
+      poll.permissionTokenHash,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
+    }
+
+    const invited = poll.invitedUsers.filter(
+      (invitedUser) => user.id === invitedUser.id,
+    );
+    if (!invited) {
+      throw new ForbiddenException();
+    }
+    return poll;
+  }
+
   async findPollById(pollId: number) {
     const poll = await this.prisma.poll.findUnique({
       where: {
@@ -104,11 +139,18 @@ export class PollsService {
       include: {
         _count: true,
         author: true,
-        answerOptions: true,
+        answerOptions: {
+          include: {
+            _count: {
+              select: { votes: true },
+            },
+          },
+        },
         invitedUsers: true,
         votes: {
           include: {
             participant: true,
+            answerOptions: true,
           },
         },
       },
@@ -254,5 +296,22 @@ export class PollsService {
         },
       ],
     };
+  }
+
+  async updatePermissionTokenHash(pollId: number, resetPass?: string | null) {
+    const permissionSlice = resetPass
+      ? resetPass.slice(resetPass.lastIndexOf('.'))
+      : null;
+    const permissionTokenHash = permissionSlice
+      ? await hashData(permissionSlice)
+      : null;
+    await this.prisma.poll.update({
+      where: {
+        id: pollId,
+      },
+      data: {
+        permissionTokenHash,
+      },
+    });
   }
 }
