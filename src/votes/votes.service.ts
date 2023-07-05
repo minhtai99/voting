@@ -30,7 +30,7 @@ export class VotesService {
     );
 
     const poll = await this.pollsService.findPollById(payload.pollId);
-    if (poll.pollToken !== createVoteDto.token) {
+    if (poll.token !== createVoteDto.token) {
       throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
     if (poll.status !== PollStatus.ongoing) {

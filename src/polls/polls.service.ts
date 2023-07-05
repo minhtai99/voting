@@ -61,7 +61,7 @@ export class PollsService {
         invitedUsers: true,
       },
     });
-    poll.pollToken = await this.updatePollToken(poll.id);
+    poll.token = await this.updatePollToken(poll.id);
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
       poll: new PollDto(poll),
@@ -281,16 +281,16 @@ export class PollsService {
   }
 
   async updatePollToken(pollId: number) {
-    const pollToken = this.authService.createJWT(
+    const token = this.authService.createJWT(
       { pollId },
       TokenType.POLL_PERMISSION,
     );
     await this.prisma.poll.update({
       where: { id: pollId },
       data: {
-        pollToken,
+        token,
       },
     });
-    return pollToken;
+    return token;
   }
 }

@@ -88,7 +88,7 @@ export class PollsController {
       );
       const payloadInvitation: MailInvitationVote = {
         pollId: payload.poll.id,
-        token: payload.poll.pollToken,
+        token: payload.poll.token,
       };
       if (payload.poll.status === PollStatus.ongoing) {
         this.eventEmitter.emit(

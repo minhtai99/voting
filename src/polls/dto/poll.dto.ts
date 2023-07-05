@@ -52,7 +52,7 @@ export class PollDto implements Poll {
   status: PollStatus;
 
   @Exclude()
-  pollToken: string;
+  token: string;
 
   @ApiProperty()
   authorId: number;
