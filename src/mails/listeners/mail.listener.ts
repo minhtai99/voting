@@ -4,7 +4,7 @@ import { MailsService } from '../../mails/mails.service';
 import { MailEvent } from '../mails.enum';
 import {
   MailForgotPassPayload,
-  MailInvitationVotePayload,
+  MailInvitationVote,
 } from '../interfaces/send-mail.interface';
 
 @Injectable()
@@ -24,9 +24,12 @@ export class MailListener {
   }
 
   @OnEvent(MailEvent.SEND_MAIL_INVITATION_VOTE)
-  async handleSendEmailInvitationVote(payload: MailInvitationVotePayload) {
+  async handleSendEmailInvitationVote(payload: MailInvitationVote) {
     try {
-      await this.mailService.sendEmailStartedPoll(payload);
+      await this.mailService.sendEmailStartedPoll(
+        payload.pollId,
+        payload.token,
+      );
     } catch (error) {
       this.logger.error(error);
     }

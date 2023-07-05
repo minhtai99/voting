@@ -34,8 +34,9 @@ import { ResetPassDto } from './dto/reset-password.dto';
 import { MailForgotPassPayload } from '../mails/interfaces/send-mail.interface';
 
 interface JwtPayload {
-  id: number;
-  email: string;
+  id?: number;
+  email?: string;
+  pollId?: number;
 }
 
 @Injectable()
@@ -197,10 +198,16 @@ export class AuthService {
 
   createJWT(payload: JwtPayload, typeToken: TokenType) {
     try {
-      return this.jwtService.sign(payload, {
-        secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-        expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
-      });
+      if (this.configService.get(`EXPIRE_${typeToken}_JWT`)) {
+        return this.jwtService.sign(payload, {
+          secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+          expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
+        });
+      } else {
+        return this.jwtService.sign(payload, {
+          secret: this.configService.get(`SECRET_${typeToken}_JWT`),
+        });
+      }
     } catch {
       throw new BadRequestException(MSG_ERROR_CREATE_TOKEN);
     }

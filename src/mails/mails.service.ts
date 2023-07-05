@@ -1,4 +1,3 @@
-import { MailInvitationVotePayload } from './interfaces/send-mail.interface';
 import { PollsService } from './../polls/polls.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
@@ -28,25 +27,25 @@ export class MailsService {
     });
   }
 
-  async sendEmailStartedPoll(payload: MailInvitationVotePayload) {
-    const url = `${this.configService.get('FRONTEND_URL')}/vote/poll?id=${
-      payload.pollId
-    }`;
-    const poll = await this.pollsService.findPollById(payload.pollId);
+  async sendEmailStartedPoll(pollId: number, token: string) {
+    const poll = await this.pollsService.findPollById(pollId);
+    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${token}`;
 
-    payload.invitedUsers.map(
-      async (receiver) =>
-        await this.mailerService.sendMail({
-          to: receiver.email,
-          subject: `[Invitation] ${poll.title}`,
-          template: './invitation-vote',
-          context: {
-            url,
-            author: payload.inviter.firstName + ' ' + payload.inviter.lastName,
-            question: poll.question,
-            endTime: poll.endDate,
-          },
-        }),
+    Promise.all(
+      poll.invitedUsers.map(
+        async (receiver) =>
+          await this.mailerService.sendMail({
+            to: receiver.email,
+            subject: `[Invitation] ${poll.title}`,
+            template: './invitation-vote',
+            context: {
+              url,
+              author: poll.author.firstName + ' ' + poll.author.lastName,
+              question: poll.question,
+              endTime: poll.endDate,
+            },
+          }),
+      ),
     );
   }
 }

@@ -1,3 +1,5 @@
+import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
+import { MailEvent } from './../mails/mails.enum';
 import {
   Controller,
   UseGuards,
@@ -6,10 +8,10 @@ import {
   UploadedFiles,
   UseInterceptors,
   InternalServerErrorException,
+  NotFoundException,
   Get,
   Param,
   ParseIntPipe,
-  NotFoundException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -30,6 +32,7 @@ import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { PollDto } from './dto/poll.dto';
 import { UploadFilesErrorsInterceptor } from './interceptors/poll-errors.interceptor';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -38,6 +41,7 @@ export class PollsController {
   constructor(
     private readonly pollsService: PollsService,
     private readonly filesService: FilesService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Post()
@@ -54,7 +58,7 @@ export class PollsController {
       }),
     ),
   )
-  createPoll(
+  async createPoll(
     @User() user: UserDto,
     @Body() createPollDto: CreatePollDto,
     @UploadedFiles()
@@ -76,12 +80,23 @@ export class PollsController {
         createPollDto.status = PollStatus.pending;
       }
 
-      return this.pollsService.createPoll(
+      const payload = await this.pollsService.createPoll(
         user,
         createPollDto,
         picturesUrl,
         backgroundUrl,
       );
+      const payloadInvitation: MailInvitationVote = {
+        pollId: payload.poll.id,
+        token: payload.poll.token,
+      };
+      if (payload.poll.status === PollStatus.ongoing) {
+        this.eventEmitter.emit(
+          MailEvent.SEND_MAIL_INVITATION_VOTE,
+          payloadInvitation,
+        );
+      }
+      return payload;
     } catch {
       if (images !== undefined) {
         if (images.background !== undefined)
@@ -169,9 +184,12 @@ export class PollsController {
   }
 
   @Get(':id')
-  async getPollById(@Param('id', ParseIntPipe) id: number) {
+  async getPollById(
+    @User() user: UserDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     try {
-      return new PollDto(await this.pollsService.findPollById(id));
+      return new PollDto(await this.pollsService.getPollById(user, id));
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }
