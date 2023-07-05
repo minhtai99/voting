@@ -4,3 +4,8 @@ export interface MailForgotPassPayload {
   receiver: UserDto;
   token: string;
 }
+
+export interface MailInvitationVote {
+  pollId: number;
+  token: string;
+}

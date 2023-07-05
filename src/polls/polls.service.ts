@@ -1,5 +1,4 @@
 import { AuthService } from 'src/auth/auth.service';
-import { compareHashedData, hashData } from './../helpers/hash.helper';
 import {
   BadRequestException,
   ForbiddenException,
@@ -15,7 +14,6 @@ import {
   MSG_INVALID_PICTURES_FIELD,
   MSG_POLL_NOT_FOUND,
   MSG_SUCCESSFUL_POLL_CREATION,
-  MSG_TOKEN_DOES_NOT_MATCH,
 } from '../constants/message.constant';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { UsersService } from '../users/users.service';
@@ -63,6 +61,7 @@ export class PollsService {
         invitedUsers: true,
       },
     });
+    poll.pollToken = await this.updatePollToken(poll.id);
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
       poll: new PollDto(poll),
@@ -102,24 +101,8 @@ export class PollsService {
     };
   }
 
-  async getPollById(user: UserDto, token: string) {
-    const payload = await this.authService.verifyToken(
-      token,
-      TokenType.POLL_PERMISSION,
-    );
-
-    const poll = await this.findPollById(payload.pollId);
-    if (!poll) {
-      throw new NotFoundException(MSG_POLL_NOT_FOUND);
-    }
-
-    const isMatch = await compareHashedData(
-      token.slice(token.lastIndexOf('.')),
-      poll.permissionTokenHash,
-    );
-    if (!isMatch) {
-      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
-    }
+  async getPollById(user: UserDto, pollId: number) {
+    const poll = await this.findPollById(pollId);
 
     const invited = poll.invitedUsers.filter(
       (invitedUser) => user.id === invitedUser.id,
@@ -297,20 +280,17 @@ export class PollsService {
     };
   }
 
-  async updatePermissionTokenHash(pollId: number, resetPass?: string | null) {
-    const permissionSlice = resetPass
-      ? resetPass.slice(resetPass.lastIndexOf('.'))
-      : null;
-    const permissionTokenHash = permissionSlice
-      ? await hashData(permissionSlice)
-      : null;
+  async updatePollToken(pollId: number) {
+    const pollToken = this.authService.createJWT(
+      { pollId },
+      TokenType.POLL_PERMISSION,
+    );
     await this.prisma.poll.update({
-      where: {
-        id: pollId,
-      },
+      where: { id: pollId },
       data: {
-        permissionTokenHash,
+        pollToken,
       },
     });
+    return pollToken;
   }
 }

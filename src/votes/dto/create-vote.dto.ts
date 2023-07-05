@@ -1,18 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsArray,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateVoteDto {
-  @IsInt()
+  @IsString()
   @IsNotEmpty()
   @ApiProperty()
-  pollId: number;
+  token: string;
 
   @IsString()
   @IsOptional()

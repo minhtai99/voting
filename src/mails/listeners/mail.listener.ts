@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailsService } from '../../mails/mails.service';
 import { MailEvent } from '../mails.enum';
-import { MailForgotPassPayload } from '../interfaces/send-mail.interface';
+import {
+  MailForgotPassPayload,
+  MailInvitationVote,
+} from '../interfaces/send-mail.interface';
 
 @Injectable()
 export class MailListener {
@@ -21,9 +24,12 @@ export class MailListener {
   }
 
   @OnEvent(MailEvent.SEND_MAIL_INVITATION_VOTE)
-  async handleSendEmailInvitationVote(pollId: number) {
+  async handleSendEmailInvitationVote(payload: MailInvitationVote) {
     try {
-      await this.mailService.sendEmailStartedPoll(pollId);
+      await this.mailService.sendEmailStartedPoll(
+        payload.pollId,
+        payload.token,
+      );
     } catch (error) {
       this.logger.error(error);
     }

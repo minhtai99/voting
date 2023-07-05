@@ -1,3 +1,4 @@
+import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
 import { MailEvent } from './../mails/mails.enum';
 import {
   Controller,
@@ -7,6 +8,10 @@ import {
   UploadedFiles,
   UseInterceptors,
   InternalServerErrorException,
+  NotFoundException,
+  Get,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -18,7 +23,10 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
-import { MSG_FILE_UPLOAD_FAILED } from '../constants/message.constant';
+import {
+  MSG_FILE_UPLOAD_FAILED,
+  MSG_POLL_NOT_FOUND,
+} from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';
@@ -78,10 +86,14 @@ export class PollsController {
         picturesUrl,
         backgroundUrl,
       );
+      const payloadInvitation: MailInvitationVote = {
+        pollId: payload.poll.id,
+        token: payload.poll.pollToken,
+      };
       if (payload.poll.status === PollStatus.ongoing) {
         this.eventEmitter.emit(
           MailEvent.SEND_MAIL_INVITATION_VOTE,
-          payload.poll.id,
+          payloadInvitation,
         );
       }
       return payload;
@@ -171,8 +183,15 @@ export class PollsController {
     return this.pollsService.getPollList(filterPollDto);
   }
 
-  @Post('get-poll')
-  async getPollById(@User() user: UserDto, @Body('token') token: string) {
-    return new PollDto(await this.pollsService.getPollById(user, token));
+  @Get(':id')
+  async getPollById(
+    @User() user: UserDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    try {
+      return new PollDto(await this.pollsService.getPollById(user, id));
+    } catch {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
   }
 }

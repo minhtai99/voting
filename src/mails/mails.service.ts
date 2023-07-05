@@ -1,11 +1,8 @@
-import { TokenType } from './../auth/auth.enum';
-import { AuthService } from '../auth/auth.service';
 import { PollsService } from './../polls/polls.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserDto } from '../users/dto/user.dto';
-import { PollDto } from 'src/polls/dto/poll.dto';
 
 @Injectable()
 export class MailsService {
@@ -13,7 +10,6 @@ export class MailsService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
-    private readonly authService: AuthService,
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
@@ -31,9 +27,8 @@ export class MailsService {
     });
   }
 
-  async sendEmailStartedPoll(pollId: number) {
+  async sendEmailStartedPoll(pollId: number, token: string) {
     const poll = await this.pollsService.findPollById(pollId);
-    const token = await this.getPollPermissionToken(poll);
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${token}`;
 
     Promise.all(
@@ -52,17 +47,5 @@ export class MailsService {
           }),
       ),
     );
-  }
-
-  async getPollPermissionToken(poll: PollDto) {
-    const pollPermissionJwt = this.authService.createJWT(
-      { pollId: poll.id },
-      TokenType.POLL_PERMISSION,
-    );
-    await this.pollsService.updatePermissionTokenHash(
-      poll.id,
-      pollPermissionJwt,
-    );
-    return pollPermissionJwt;
   }
 }

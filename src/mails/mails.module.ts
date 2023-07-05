@@ -1,12 +1,11 @@
 import { PollsModule } from './../polls/polls.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { Global, Module, forwardRef } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { MailsService } from './mails.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { MailListener } from './listeners/mail.listener';
-import { AuthModule } from 'src/auth/auth.module';
 
 @Global()
 @Module({
@@ -35,7 +34,6 @@ import { AuthModule } from 'src/auth/auth.module';
       inject: [ConfigService],
     }),
     PollsModule,
-    forwardRef(() => AuthModule),
   ],
   controllers: [],
   providers: [MailsService, MailListener],

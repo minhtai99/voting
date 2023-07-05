@@ -1,7 +1,9 @@
+import { AuthService } from 'src/auth/auth.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
   MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
+  MSG_TOKEN_DOES_NOT_MATCH,
   MSG_VOTE_NOT_FOUND,
 } from '../constants/message.constant';
 import { PollsService } from '../polls/polls.service';
@@ -11,26 +13,37 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
+import { TokenType } from 'src/auth/auth.enum';
 
 @Injectable()
 export class VotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pollsService: PollsService,
+    private readonly authService: AuthService,
   ) {}
 
   async createAndUpdateVote(user: UserDto, createVoteDto: CreateVoteDto) {
-    const poll = await this.pollsService.findPollById(createVoteDto.pollId);
+    const payload = await this.authService.verifyToken(
+      createVoteDto.token,
+      TokenType.POLL_PERMISSION,
+    );
+
+    const poll = await this.pollsService.findPollById(payload.pollId);
+    if (poll.pollToken !== createVoteDto.token) {
+      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
+    }
     if (poll.status !== PollStatus.ongoing) {
       throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
     }
+
     this.checkAnswerType(poll.answerType, createVoteDto);
 
     const vote = await this.prisma.vote.upsert({
       where: {
         pollId_participantId: {
           participantId: user.id,
-          pollId: createVoteDto.pollId,
+          pollId: poll.id,
         },
       },
       update: {
@@ -40,7 +53,7 @@ export class VotesService {
         },
       },
       create: {
-        poll: { connect: { id: createVoteDto.pollId } },
+        poll: { connect: { id: poll.id } },
         input: createVoteDto.input,
         participant: { connect: { id: user.id } },
         answerOptions: {

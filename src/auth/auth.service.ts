@@ -34,8 +34,9 @@ import { ResetPassDto } from './dto/reset-password.dto';
 import { MailForgotPassPayload } from '../mails/interfaces/send-mail.interface';
 
 interface JwtPayload {
-  id: number;
-  email: string;
+  id?: number;
+  email?: string;
+  pollId?: number;
 }
 
 @Injectable()
@@ -195,7 +196,7 @@ export class AuthService {
     }
   }
 
-  createJWT(payload: JwtPayload | { pollId: number }, typeToken: TokenType) {
+  createJWT(payload: JwtPayload, typeToken: TokenType) {
     try {
       if (this.configService.get(`EXPIRE_${typeToken}_JWT`)) {
         return this.jwtService.sign(payload, {
