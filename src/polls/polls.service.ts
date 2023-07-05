@@ -110,7 +110,7 @@ export class PollsService {
     if (!invited) {
       throw new ForbiddenException();
     }
-    return poll;
+    return { poll: new PollDto(poll), token: poll.token };
   }
 
   async findPollById(pollId: number) {
@@ -186,12 +186,14 @@ export class PollsService {
           );
         });
 
-        fs.unlink(
-          `${destination}/${backgroundUrl.slice(
-            backgroundUrl.indexOf('images'),
-          )}`,
-          (err) => err,
-        );
+        if (backgroundUrl) {
+          fs.unlink(
+            `${destination}/${backgroundUrl.slice(
+              backgroundUrl.indexOf('images'),
+            )}`,
+            (err) => err,
+          );
+        }
         throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
       }
     }

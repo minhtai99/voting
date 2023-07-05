@@ -14,18 +14,16 @@ export class UploadFilesErrorsInterceptor implements NestInterceptor {
     return next.handle().pipe(
       catchError((error) =>
         throwError(() => {
-          if (
-            error.status === 400 &&
-            error.response.message === 'Unexpected field'
-          ) {
-            error.response.message = 'Limit images to only 10 files';
+          if (error.response) {
+            if (
+              error.status === 400 &&
+              error.response.message === 'Unexpected field'
+            ) {
+              error.response.message = 'Limit images to only 10 files';
+            }
+            throw new HttpException(error.response, error.status);
           }
-          const payload = {
-            status: error.response.statusCode,
-            message: error.response.message,
-            error: error.response.error,
-          };
-          throw new HttpException(payload, error.status);
+          throw new Error(error);
         }),
       ),
     );

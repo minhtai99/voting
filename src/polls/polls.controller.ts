@@ -7,11 +7,11 @@ import {
   Body,
   UploadedFiles,
   UseInterceptors,
-  InternalServerErrorException,
   NotFoundException,
   Get,
   Param,
   ParseIntPipe,
+  HttpException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -23,14 +23,10 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
-import {
-  MSG_FILE_UPLOAD_FAILED,
-  MSG_POLL_NOT_FOUND,
-} from '../constants/message.constant';
+import { MSG_POLL_NOT_FOUND } from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';
-import { PollDto } from './dto/poll.dto';
 import { UploadFilesErrorsInterceptor } from './interceptors/poll-errors.interceptor';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -97,7 +93,7 @@ export class PollsController {
         );
       }
       return payload;
-    } catch {
+    } catch (error) {
       if (images !== undefined) {
         if (images.background !== undefined)
           fs.unlink(images.background[0].path, (err) => err);
@@ -107,7 +103,7 @@ export class PollsController {
             fs.unlink(picture.path, (err) => err);
           });
       }
-      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
+      throw new HttpException(error.response, error.status);
     }
   }
 
@@ -148,7 +144,7 @@ export class PollsController {
         picturesUrl,
         backgroundUrl,
       );
-    } catch {
+    } catch (error) {
       if (images !== undefined) {
         if (images.background !== undefined)
           fs.unlink(images.background[0].path, (err) => err);
@@ -158,7 +154,7 @@ export class PollsController {
             fs.unlink(picture.path, (err) => err);
           });
       }
-      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
+      throw new HttpException(error.response, error.status);
     }
   }
 
@@ -189,7 +185,7 @@ export class PollsController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     try {
-      return new PollDto(await this.pollsService.getPollById(user, id));
+      return await this.pollsService.getPollById(user, id);
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }

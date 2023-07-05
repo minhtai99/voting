@@ -14,6 +14,7 @@ import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { TokenType } from 'src/auth/auth.enum';
+import { PollDto } from 'src/polls/dto/poll.dto';
 
 @Injectable()
 export class VotesService {
@@ -37,7 +38,7 @@ export class VotesService {
       throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
     }
 
-    this.checkAnswerType(poll.answerType, createVoteDto);
+    this.votingDataValidation(poll, createVoteDto);
 
     const vote = await this.prisma.vote.upsert({
       where: {
@@ -100,8 +101,8 @@ export class VotesService {
     }
   }
 
-  checkAnswerType(answerType: AnswerType, voteDto: CreateVoteDto) {
-    if (answerType === AnswerType.input) {
+  votingDataValidation(poll: PollDto, voteDto: CreateVoteDto) {
+    if (poll.answerType === AnswerType.input) {
       if (voteDto.answerOptions.length !== 0)
         throw new BadRequestException(
           'Invalid answerOptions field for Poll answer type',
@@ -109,7 +110,7 @@ export class VotesService {
       if (!voteDto.input)
         throw new BadRequestException('Input field should not be empty');
     }
-    if (answerType !== AnswerType.input) {
+    if (poll.answerType !== AnswerType.input) {
       if (voteDto.input)
         throw new BadRequestException(
           'Invalid input field for Poll answer type',
@@ -118,6 +119,14 @@ export class VotesService {
         throw new BadRequestException(
           'AnswerOptions field must contain at least 1 answer',
         );
+      }
+      const isMatch = poll.answerOptions.every((answerOption) => {
+        return voteDto.answerOptions.find(
+          (answer) => answerOption.id === answer,
+        );
+      });
+      if (!isMatch) {
+        throw new BadRequestException('AnswerOptions provided is not valid');
       }
     }
   }

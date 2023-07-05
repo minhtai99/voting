@@ -23,7 +23,7 @@ export class PollSchedule {
         if (poll.status === PollStatus.pending) {
           const payloadInvitation: MailInvitationVote = {
             pollId: poll.id,
-            token: poll.pollToken,
+            token: poll.token,
           };
           await this.pollsService.updatePollStatus(poll.id, PollStatus.ongoing);
           this.eventEmitter.emit(
