@@ -51,6 +51,7 @@ model Poll {
   endDate       DateTime?
   isPublic      Boolean
   status        PollStatus
+  token         String?
 
   invitedUsers  User[]         @relation("InvitationToPoll")
   answerOptions AnswerOption[]
@@ -84,4 +85,6 @@ model Vote {
   pollId        Int
   participant   User           @relation(fields: [participantId], references: [id])
   participantId Int
+
+  @@unique([pollId, participantId])
 }

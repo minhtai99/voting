@@ -10,5 +10,6 @@ import { MailsModule } from '../mails/mails.module';
   imports: [UsersModule, JwtModule.register({}), MailsModule],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

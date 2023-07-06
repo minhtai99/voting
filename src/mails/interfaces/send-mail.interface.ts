@@ -5,12 +5,7 @@ export interface MailForgotPassPayload {
   token: string;
 }
 
-export interface MailInvitationVotePayload extends MailPollPayload {
-  invitedUsers: UserDto[];
-}
-
-export interface MailPollPayload {
-  inviter?: UserDto;
+export interface MailInvitationVote {
   pollId: number;
-  receiver?: UserDto;
+  token: string;
 }

@@ -1,5 +1,7 @@
+import { AuthService } from 'src/auth/auth.service';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
+import { TokenType } from 'src/auth/auth.enum';
 
 @Injectable()
 export class PollsService {
@@ -26,6 +29,7 @@ export class PollsService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
+    private readonly authService: AuthService,
   ) {}
 
   async createPoll(
@@ -57,6 +61,7 @@ export class PollsService {
         invitedUsers: true,
       },
     });
+    poll.token = await this.updatePollToken(poll.id);
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
       poll: new PollDto(poll),
@@ -96,6 +101,18 @@ export class PollsService {
     };
   }
 
+  async getPollById(user: UserDto, pollId: number) {
+    const poll = await this.findPollById(pollId);
+
+    const invited = poll.invitedUsers.filter(
+      (invitedUser) => user.id === invitedUser.id,
+    );
+    if (!invited) {
+      throw new ForbiddenException();
+    }
+    return { poll: new PollDto(poll), token: poll.token };
+  }
+
   async findPollById(pollId: number) {
     const poll = await this.prisma.poll.findUnique({
       where: {
@@ -104,11 +121,18 @@ export class PollsService {
       include: {
         _count: true,
         author: true,
-        answerOptions: true,
+        answerOptions: {
+          include: {
+            _count: {
+              select: { votes: true },
+            },
+          },
+        },
         invitedUsers: true,
         votes: {
           include: {
             participant: true,
+            answerOptions: true,
           },
         },
       },
@@ -162,12 +186,14 @@ export class PollsService {
           );
         });
 
-        fs.unlink(
-          `${destination}/${backgroundUrl.slice(
-            backgroundUrl.indexOf('images'),
-          )}`,
-          (err) => err,
-        );
+        if (backgroundUrl) {
+          fs.unlink(
+            `${destination}/${backgroundUrl.slice(
+              backgroundUrl.indexOf('images'),
+            )}`,
+            (err) => err,
+          );
+        }
         throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
       }
     }
@@ -254,5 +280,19 @@ export class PollsService {
         },
       ],
     };
+  }
+
+  async updatePollToken(pollId: number) {
+    const token = this.authService.createJWT(
+      { pollId },
+      TokenType.POLL_PERMISSION,
+    );
+    await this.prisma.poll.update({
+      where: { id: pollId },
+      data: {
+        token,
+      },
+    });
+    return token;
   }
 }

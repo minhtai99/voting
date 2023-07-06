@@ -1,3 +1,5 @@
+import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
+import { MailEvent } from './../mails/mails.enum';
 import {
   Controller,
   UseGuards,
@@ -5,11 +7,11 @@ import {
   Body,
   UploadedFiles,
   UseInterceptors,
-  InternalServerErrorException,
+  NotFoundException,
   Get,
   Param,
   ParseIntPipe,
-  NotFoundException,
+  HttpException,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -21,15 +23,12 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
-import {
-  MSG_FILE_UPLOAD_FAILED,
-  MSG_POLL_NOT_FOUND,
-} from '../constants/message.constant';
+import { MSG_POLL_NOT_FOUND } from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
 import { CreatePollDto } from './dto/create-poll.dto';
-import { PollDto } from './dto/poll.dto';
 import { UploadFilesErrorsInterceptor } from './interceptors/poll-errors.interceptor';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -38,6 +37,7 @@ export class PollsController {
   constructor(
     private readonly pollsService: PollsService,
     private readonly filesService: FilesService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Post()
@@ -54,7 +54,7 @@ export class PollsController {
       }),
     ),
   )
-  createPoll(
+  async createPoll(
     @User() user: UserDto,
     @Body() createPollDto: CreatePollDto,
     @UploadedFiles()
@@ -76,13 +76,24 @@ export class PollsController {
         createPollDto.status = PollStatus.pending;
       }
 
-      return this.pollsService.createPoll(
+      const payload = await this.pollsService.createPoll(
         user,
         createPollDto,
         picturesUrl,
         backgroundUrl,
       );
-    } catch {
+      const payloadInvitation: MailInvitationVote = {
+        pollId: payload.poll.id,
+        token: payload.poll.token,
+      };
+      if (payload.poll.status === PollStatus.ongoing) {
+        this.eventEmitter.emit(
+          MailEvent.SEND_MAIL_INVITATION_VOTE,
+          payloadInvitation,
+        );
+      }
+      return payload;
+    } catch (error) {
       if (images !== undefined) {
         if (images.background !== undefined)
           fs.unlink(images.background[0].path, (err) => err);
@@ -92,7 +103,7 @@ export class PollsController {
             fs.unlink(picture.path, (err) => err);
           });
       }
-      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
+      throw new HttpException(error.response, error.status);
     }
   }
 
@@ -133,7 +144,7 @@ export class PollsController {
         picturesUrl,
         backgroundUrl,
       );
-    } catch {
+    } catch (error) {
       if (images !== undefined) {
         if (images.background !== undefined)
           fs.unlink(images.background[0].path, (err) => err);
@@ -143,7 +154,7 @@ export class PollsController {
             fs.unlink(picture.path, (err) => err);
           });
       }
-      throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
+      throw new HttpException(error.response, error.status);
     }
   }
 
@@ -169,9 +180,12 @@ export class PollsController {
   }
 
   @Get(':id')
-  async getPollById(@Param('id', ParseIntPipe) id: number) {
+  async getPollById(
+    @User() user: UserDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     try {
-      return new PollDto(await this.pollsService.findPollById(id));
+      return await this.pollsService.getPollById(user, id);
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }
