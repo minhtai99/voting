@@ -12,5 +12,5 @@ export const fileFilter = (fieldname: FieldName, mimetype: string): boolean => {
 
 export const fileConfig = {
   dest: process.env.UPLOADED_FILES_DESTINATION,
-  domain: process.env.API_SERVER_URL + '\\',
+  domain: process.env.BACKEND_DOMAIN + '\\',
 };

@@ -32,3 +32,5 @@ export const MSG_POLL_NOT_FOUND = 'Poll is not found';
 export const MSG_VOTE_NOT_FOUND = 'Vote is not found';
 export const MSG_USER_NOT_AUTHOR = 'You are not the author of this poll';
 export const MSG_POLL_STATUS_NOT_ONGOING = 'Poll status is not Ongoing';
+export const MSG_CURRENT_PASS_MUST_DIFFERENT_NEW_PASS =
+  'New Password must be different from your Current Password';

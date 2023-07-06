@@ -67,6 +67,7 @@ export class VotesService {
         poll: {
           include: {
             author: true,
+            answerOptions: true,
           },
         },
       },
