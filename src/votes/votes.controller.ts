@@ -8,6 +8,7 @@ import {
   Get,
   NotFoundException,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
@@ -15,6 +16,8 @@ import { CreateVoteDto } from './dto/create-vote.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
 import { VoteDto } from './dto/vote.dto';
+import { VoteTokenGuard } from './vote.guard';
+import { Request } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vote')
@@ -23,24 +26,28 @@ export class VotesController {
   constructor(private readonly votesService: VotesService) {}
 
   @Post()
+  @UseGuards(VoteTokenGuard)
   createAndUpdateVote(
     @User() user: UserDto,
     @Body() createVoteDto: CreateVoteDto,
+    @Req() req: Request,
   ) {
-    return this.votesService.createAndUpdateVote(user, createVoteDto);
+    return this.votesService.upsert(user, createVoteDto, req);
   }
 
   @Get()
-  async getVoteById(@User() user: UserDto, @Body('token') token: string) {
+  @UseGuards(VoteTokenGuard)
+  async getVoteById(@User() user: UserDto, @Req() req: Request) {
     try {
-      return new VoteDto(await this.votesService.findVoteByPollId(user, token));
+      return new VoteDto(await this.votesService.findVoteByPollId(user, req));
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }
   }
 
   @Delete()
-  deleteVote(@User() user: UserDto, @Body('token') token: string) {
-    return this.votesService.deleteVote(user, token);
+  @UseGuards(VoteTokenGuard)
+  deleteVote(@User() user: UserDto, @Req() req: Request) {
+    return this.votesService.deleteVote(user, req);
   }
 }

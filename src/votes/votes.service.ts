@@ -1,43 +1,22 @@
-import { AuthService } from 'src/auth/auth.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
-  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
-  MSG_TOKEN_DOES_NOT_MATCH,
   MSG_VOTE_NOT_FOUND,
 } from '../constants/message.constant';
-import { PollsService } from '../polls/polls.service';
 import { UserDto } from '../users/dto/user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
-import { AnswerType, PollStatus } from '@prisma/client';
-import { TokenType } from 'src/auth/auth.enum';
+import { AnswerType } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
-
+import { Request } from 'express';
 @Injectable()
 export class VotesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly pollsService: PollsService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async createAndUpdateVote(user: UserDto, createVoteDto: CreateVoteDto) {
-    const payload = await this.authService.verifyToken(
-      createVoteDto.token,
-      TokenType.POLL_PERMISSION,
-    );
-
-    const poll = await this.pollsService.findPollById(payload.pollId);
-    if (poll.token !== createVoteDto.token) {
-      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
-    }
-    if (poll.status !== PollStatus.ongoing) {
-      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
-    }
-
+  async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
+    const poll: PollDto = req['poll'];
     this.votingDataValidation(poll, createVoteDto);
 
     const vote = await this.prisma.vote.upsert({
@@ -73,16 +52,13 @@ export class VotesService {
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
   }
 
-  async findVoteByPollId(user: UserDto, token: string) {
-    const payload = await this.authService.verifyToken(
-      token,
-      TokenType.POLL_PERMISSION,
-    );
+  async findVoteByPollId(user: UserDto, req: Request) {
+    const poll: PollDto = req['poll'];
     return await this.prisma.vote.findUnique({
       where: {
         pollId_participantId: {
           participantId: user.id,
-          pollId: payload.pollId,
+          pollId: poll.id,
         },
       },
       include: {
@@ -97,17 +73,14 @@ export class VotesService {
     });
   }
 
-  async deleteVote(user: UserDto, token: string) {
+  async deleteVote(user: UserDto, req: Request) {
     try {
-      const payload = await this.authService.verifyToken(
-        token,
-        TokenType.POLL_PERMISSION,
-      );
+      const poll: PollDto = req['poll'];
       await this.prisma.vote.delete({
         where: {
           pollId_participantId: {
             participantId: user.id,
-            pollId: payload.pollId,
+            pollId: poll.id,
           },
         },
       });
