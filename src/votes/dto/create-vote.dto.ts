@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  isArray,
+} from 'class-validator';
 
 export class CreateVoteDto {
   @IsString()
@@ -14,7 +20,7 @@ export class CreateVoteDto {
   input: string = null;
 
   @IsArray()
-  @Transform((item) => item.value.map((e) => Number(e)))
+  @Transform((item) => (isArray(item.value) ? item.value : [item.value]))
   @IsOptional()
   @ApiProperty({ type: [Number], default: [] })
   answerOptions: number[] = [];

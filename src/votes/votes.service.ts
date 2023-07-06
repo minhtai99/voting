@@ -73,10 +73,17 @@ export class VotesService {
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
   }
 
-  async findVoteByPollId(user: UserDto, pollId: number) {
+  async findVoteByPollId(user: UserDto, token: string) {
+    const payload = await this.authService.verifyToken(
+      token,
+      TokenType.POLL_PERMISSION,
+    );
     return await this.prisma.vote.findUnique({
       where: {
-        pollId_participantId: { participantId: user.id, pollId },
+        pollId_participantId: {
+          participantId: user.id,
+          pollId: payload.pollId,
+        },
       },
       include: {
         participant: true,
@@ -90,10 +97,19 @@ export class VotesService {
     });
   }
 
-  async deleteVote(user: UserDto, pollId: number) {
+  async deleteVote(user: UserDto, token: string) {
     try {
+      const payload = await this.authService.verifyToken(
+        token,
+        TokenType.POLL_PERMISSION,
+      );
       await this.prisma.vote.delete({
-        where: { pollId_participantId: { participantId: user.id, pollId } },
+        where: {
+          pollId_participantId: {
+            participantId: user.id,
+            pollId: payload.pollId,
+          },
+        },
       });
       return { message: MSG_DELETE_VOTE_SUCCESSFUL };
     } catch (error) {
@@ -120,12 +136,12 @@ export class VotesService {
           'AnswerOptions field must contain at least 1 answer',
         );
       }
-      const isMatch = poll.answerOptions.every((answerOption) => {
-        return voteDto.answerOptions.find(
-          (answer) => answerOption.id === answer,
+      const isMatch = voteDto.answerOptions.map((answer) => {
+        return poll.answerOptions.find(
+          (answerOption) => answerOption.id === answer,
         );
       });
-      if (!isMatch) {
+      if (isMatch.some((e) => e === undefined)) {
         throw new BadRequestException('AnswerOptions provided is not valid');
       }
     }

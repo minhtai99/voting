@@ -7,8 +7,6 @@ import {
   Delete,
   Get,
   NotFoundException,
-  Param,
-  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -32,20 +30,17 @@ export class VotesController {
     return this.votesService.createAndUpdateVote(user, createVoteDto);
   }
 
-  @Get('/poll-id/:id')
-  async getVoteById(
-    @User() user: UserDto,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  @Get()
+  async getVoteById(@User() user: UserDto, @Body('token') token: string) {
     try {
-      return new VoteDto(await this.votesService.findVoteByPollId(user, id));
+      return new VoteDto(await this.votesService.findVoteByPollId(user, token));
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }
   }
 
-  @Delete('/poll-id/:id')
-  deleteVote(@User() user: UserDto, @Param('id', ParseIntPipe) id: number) {
-    return this.votesService.deleteVote(user, id);
+  @Delete()
+  deleteVote(@User() user: UserDto, @Body('token') token: string) {
+    return this.votesService.deleteVote(user, token);
   }
 }
