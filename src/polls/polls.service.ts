@@ -140,6 +140,26 @@ export class PollsService {
     return poll;
   }
 
+  async findVoteByPollId(user: UserDto, pollId: number) {
+    const poll = await this.prisma.poll.findUnique({
+      where: {
+        id: pollId,
+      },
+      include: {
+        answerOptions: true,
+        votes: {
+          include: {
+            answerOptions: true,
+          },
+          where: {
+            participantId: user.id,
+          },
+        },
+      },
+    });
+    return new PollDto(poll);
+  }
+
   async getPrismaPollData(
     pollDto: Partial<CreatePollDto>,
     picturesUrl: string[],
