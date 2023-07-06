@@ -73,22 +73,22 @@ export class VotesService {
     });
   }
 
-  async deleteVote(user: UserDto, req: Request) {
-    try {
-      const poll: PollDto = req['poll'];
-      await this.prisma.vote.delete({
-        where: {
-          pollId_participantId: {
-            participantId: user.id,
-            pollId: poll.id,
-          },
-        },
-      });
-      return { message: MSG_DELETE_VOTE_SUCCESSFUL };
-    } catch (error) {
-      throw new BadRequestException(MSG_VOTE_NOT_FOUND);
-    }
-  }
+  // async deleteVote(user: UserDto, req: Request) {
+  //   try {
+  //     const poll: PollDto = req['poll'];
+  //     await this.prisma.vote.delete({
+  //       where: {
+  //         pollId_participantId: {
+  //           participantId: user.id,
+  //           pollId: poll.id,
+  //         },
+  //       },
+  //     });
+  //     return { message: MSG_DELETE_VOTE_SUCCESSFUL };
+  //   } catch (error) {
+  //     throw new BadRequestException(MSG_VOTE_NOT_FOUND);
+  //   }
+  // }
 
   votingDataValidation(poll: PollDto, voteDto: CreateVoteDto) {
     if (poll.answerType === AnswerType.input) {

@@ -45,9 +45,9 @@ export class VotesController {
     }
   }
 
-  @Delete()
-  @UseGuards(VoteTokenGuard)
-  deleteVote(@User() user: UserDto, @Req() req: Request) {
-    return this.votesService.deleteVote(user, req);
-  }
+  // @Delete()
+  // @UseGuards(VoteTokenGuard)
+  // deleteVote(@User() user: UserDto, @Req() req: Request) {
+  //   return this.votesService.deleteVote(user, req);
+  // }
 }
