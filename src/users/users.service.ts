@@ -11,6 +11,7 @@ import { UserDto } from './dto/user.dto';
 import {
   MSG_CHANGE_PASSWORD_SUCCESSFUL,
   MSG_CURRENT_PASSWORD_INCORRECT,
+  MSG_CURRENT_PASS_MUST_DIFFERENT_NEW_PASS,
   MSG_UPDATE_FAIL,
   MSG_UPDATE_SUCCESSFUL,
 } from '../constants/message.constant';
@@ -102,6 +103,10 @@ export class UsersService {
   }
 
   async changePassword(user: UserDto, changePassDto: ChangePassDto) {
+    if (changePassDto.currentPassword === changePassDto.newPassword) {
+      throw new BadRequestException(MSG_CURRENT_PASS_MUST_DIFFERENT_NEW_PASS);
+    }
+
     const isMatch = await compareHashedData(
       changePassDto.currentPassword,
       user.password,

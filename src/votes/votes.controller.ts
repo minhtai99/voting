@@ -5,7 +5,6 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   NotFoundException,
   Post,
   Req,
@@ -13,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
 import { VoteDto } from './dto/vote.dto';
 import { VoteTokenGuard } from './vote.guard';
@@ -35,9 +34,14 @@ export class VotesController {
     return this.votesService.upsert(user, createVoteDto, req);
   }
 
-  @Get()
+  @ApiBody({
+    schema: {
+      properties: { token: { description: 'string', type: 'string' } },
+    },
+  })
+  @Post('get-vote')
   @UseGuards(VoteTokenGuard)
-  async getVoteById(@User() user: UserDto, @Req() req: Request) {
+  async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
       return new VoteDto(await this.votesService.findVoteByPollId(user, req));
     } catch {
