@@ -41,7 +41,7 @@ export class VotesController {
   })
   @Post('get-vote')
   @UseGuards(VoteTokenGuard)
-  async getVoteById(@User() user: UserDto, @Req() req: Request) {
+  async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
       return new VoteDto(await this.votesService.findVoteByPollId(user, req));
     } catch {
