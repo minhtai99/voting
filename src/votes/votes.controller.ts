@@ -14,7 +14,6 @@ import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
-import { VoteDto } from './dto/vote.dto';
 import { VoteTokenGuard } from './vote.guard';
 import { Request } from 'express';
 
@@ -43,7 +42,7 @@ export class VotesController {
   @UseGuards(VoteTokenGuard)
   async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
-      return new VoteDto(await this.votesService.findVoteByPollId(user, req));
+      return this.votesService.findVoteByPollId(user, req);
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }

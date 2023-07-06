@@ -1,3 +1,4 @@
+import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
   MSG_SUCCESSFUL_VOTE_CREATION,
@@ -13,7 +14,10 @@ import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
 @Injectable()
 export class VotesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pollsService: PollsService,
+  ) {}
 
   async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
     const poll: PollDto = req['poll'];
@@ -54,24 +58,7 @@ export class VotesService {
 
   async findVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
-    return await this.prisma.vote.findUnique({
-      where: {
-        pollId_participantId: {
-          participantId: user.id,
-          pollId: poll.id,
-        },
-      },
-      include: {
-        participant: true,
-        answerOptions: true,
-        poll: {
-          include: {
-            author: true,
-            answerOptions: true,
-          },
-        },
-      },
-    });
+    return this.pollsService.findVoteByPollId(user, poll.id);
   }
 
   // async deleteVote(user: UserDto, req: Request) {
