@@ -17,7 +17,7 @@ export class PollSchedule {
 
   private readonly logger = new Logger(PollSchedule.name);
 
-  @Cron('*/15 * * * * *')
+  @Cron('0 */5 * * * *')
   async pollStatusEventHandler() {
     const polls = await this.pollsService.getAllPollForSchedule();
     Promise.all(
