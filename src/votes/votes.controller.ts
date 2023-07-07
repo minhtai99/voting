@@ -14,7 +14,7 @@ import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
-import { VoteTokenGuard } from './vote.guard';
+import { VoteGuard } from './vote.guard';
 import { Request } from 'express';
 
 @UseGuards(JwtAuthGuard)
@@ -24,7 +24,7 @@ export class VotesController {
   constructor(private readonly votesService: VotesService) {}
 
   @Post()
-  @UseGuards(VoteTokenGuard)
+  @UseGuards(VoteGuard)
   createAndUpdateVote(
     @User() user: UserDto,
     @Body() createVoteDto: CreateVoteDto,
@@ -39,7 +39,7 @@ export class VotesController {
     },
   })
   @Post('get-vote')
-  @UseGuards(VoteTokenGuard)
+  @UseGuards(VoteGuard)
   async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
       return this.votesService.findVoteByPollId(user, req);
@@ -49,7 +49,7 @@ export class VotesController {
   }
 
   // @Delete()
-  // @UseGuards(VoteTokenGuard)
+  // @UseGuards(VoteGuard)
   // deleteVote(@User() user: UserDto, @Req() req: Request) {
   //   return this.votesService.deleteVote(user, req);
   // }

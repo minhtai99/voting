@@ -103,11 +103,6 @@ export class PollsService {
 
   async getPollById(user: UserDto, pollId: number) {
     const poll = await this.findPollById(pollId);
-
-    this.checkInvited(user, {
-      invitedUsers: poll.invitedUsers,
-      authorId: poll.authorId,
-    });
     return { poll: new PollDto(poll), token: poll.token };
   }
 
@@ -144,7 +139,6 @@ export class PollsService {
         id: pollId,
       },
       include: {
-        invitedUsers: true,
         answerOptions: true,
         votes: {
           include: {
@@ -156,23 +150,7 @@ export class PollsService {
         },
       },
     });
-    this.checkInvited(user, {
-      invitedUsers: poll.invitedUsers,
-      authorId: poll.authorId,
-    });
     return new PollDto(poll);
-  }
-
-  checkInvited(
-    user: UserDto,
-    payload: { invitedUsers: UserDto[]; authorId: number },
-  ) {
-    const invited = payload.invitedUsers.some(
-      (invitedUser) => user.id === invitedUser.id,
-    );
-    if (!invited && user.id !== payload.authorId) {
-      throw new ForbiddenException();
-    }
   }
 
   async getPrismaPollData(
