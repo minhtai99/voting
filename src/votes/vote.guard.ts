@@ -1,7 +1,4 @@
-import {
-  MSG_POLL_STATUS_NOT_ONGOING,
-  MSG_TOKEN_DOES_NOT_MATCH,
-} from './../constants/message.constant';
+import { MSG_TOKEN_DOES_NOT_MATCH } from './../constants/message.constant';
 import { AuthService } from './../auth/auth.service';
 import { PollsService } from './../polls/polls.service';
 import { TokenType } from './../auth/auth.enum';
@@ -12,7 +9,6 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PollStatus } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { PollDto } from 'src/polls/dto/poll.dto';
 
@@ -44,9 +40,7 @@ export class VoteGuard implements CanActivate {
     if (poll.token !== request.body.token) {
       throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
-    if (poll.status !== PollStatus.ongoing) {
-      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
-    }
+
     request['poll'] = poll;
     return this.checkInvited(context);
   }

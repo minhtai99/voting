@@ -1,6 +1,7 @@
 import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
+  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
   MSG_VOTE_NOT_FOUND,
 } from '../constants/message.constant';
@@ -9,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
-import { AnswerType } from '@prisma/client';
+import { AnswerType, PollStatus } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
 @Injectable()
@@ -21,6 +22,9 @@ export class VotesService {
 
   async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
     const poll: PollDto = req['poll'];
+    if (poll.status !== PollStatus.ongoing) {
+      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
+    }
     this.votingDataValidation(poll, createVoteDto);
 
     const vote = await this.prisma.vote.upsert({

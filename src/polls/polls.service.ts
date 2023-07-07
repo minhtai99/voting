@@ -262,15 +262,27 @@ export class PollsService {
             },
             status: 'pending',
           },
+          {
+            endDate: {
+              gte: new Date(current.getTime() - 60000 * 6), // current - 6m
+              lte: current,
+            },
+            status: 'ongoing',
+          },
         ],
       },
       include: {
         votes: true,
         author: true,
         invitedUsers: true,
+        answerOptions: {
+          include: {
+            _count: true,
+          },
+        },
       },
     });
-    return polls.map((poll) => new PollDto(poll));
+    return polls;
   }
 
   filterParticipantPoll(userId: number) {

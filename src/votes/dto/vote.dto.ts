@@ -37,8 +37,8 @@ export class VoteDto implements Vote {
   @ApiProperty()
   participantId: number;
 
-  @ApiProperty({ type: AnswerOptionDto })
-  answerOption: AnswerOptionDto;
+  @ApiProperty({ type: AnswerOptionDto, isArray: true })
+  answers: AnswerOptionDto[];
 
   @ApiProperty({ type: UserDto })
   participant: UserDto;
