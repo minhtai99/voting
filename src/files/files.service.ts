@@ -151,10 +151,10 @@ export class FilesService {
         horizontal: 'center',
       };
       worksheet.getCell(1, 1).border = {
-        top: { style: 'thick', color: { argb: 'FF1F00' } },
-        left: { style: 'thick', color: { argb: 'FF1F00' } },
-        bottom: { style: 'thick', color: { argb: 'FF1F00' } },
-        right: { style: 'thick', color: { argb: 'FF1F00' } },
+        top: { style: 'medium', color: { argb: 'FF3F3F' } },
+        left: { style: 'medium', color: { argb: 'FF3F3F' } },
+        bottom: { style: 'medium', color: { argb: 'FF3F3F' } },
+        right: { style: 'medium', color: { argb: 'FF3F3F' } },
       };
       for (let i = 1; i <= 5; i++) {
         worksheet.getCell(7, i).font = {
@@ -166,16 +166,14 @@ export class FilesService {
           horizontal: 'center',
         };
         worksheet.getCell(7, i).border = {
-          top: { style: 'double', color: { argb: '196F3D' } },
-          left: { style: 'double', color: { argb: '196F3D' } },
-          bottom: { style: 'double', color: { argb: '196F3D' } },
-          right: { style: 'double', color: { argb: '196F3D' } },
+          top: { style: 'medium', color: { argb: '196F3D' } },
+          left: { style: 'medium', color: { argb: '196F3D' } },
+          bottom: { style: 'medium', color: { argb: '196F3D' } },
+          right: { style: 'medium', color: { argb: '196F3D' } },
         };
       }
 
-      const col1 = worksheet.getColumn(1);
-      const col2 = worksheet.getColumn(2);
-      col1.header = [
+      worksheet.getColumn(1).header = [
         'Summary',
         'Title',
         'Question',
@@ -184,7 +182,7 @@ export class FilesService {
         'Answer Type',
         'No.',
       ];
-      col2.header = [
+      worksheet.getColumn(2).header = [
         '',
         sheetData[0].title,
         sheetData[0].question,
@@ -197,8 +195,20 @@ export class FilesService {
       worksheet.getColumn(4).header = ['', '', '', '', '', '', 'Time'];
       worksheet.getColumn(5).header = ['', '', '', '', '', '', 'Answer'];
 
+      worksheet.mergeCells('A1:E1');
+      for (let i = 2; i <= 6; i++) {
+        worksheet.mergeCells(`B${i}:E${i}`);
+        worksheet.getCell(i, 1).font = {
+          bold: true,
+          size: 12,
+        };
+        worksheet.getCell(i, 1).border = {
+          right: { style: 'medium', color: { argb: 'FF1F00' } },
+        };
+      }
+
       sheetData.map((value, index) => {
-        if (value.title) return;
+        if (index === 0) return;
         worksheet.addRow({
           no: index,
           email: value.email,
