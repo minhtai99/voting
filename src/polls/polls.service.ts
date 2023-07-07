@@ -1,7 +1,6 @@
 import { AuthService } from 'src/auth/auth.service';
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
