@@ -35,14 +35,14 @@ export class MailListener {
     }
   }
 
-  // @OnEvent(MailEvent.SEND_MAIL_POLL_ENDED_PARTICIPANT)
-  // async handleSendEmailPollEndParticipant(pollId: number) {
-  //   try {
-  //     await this.mailService.sendEmailPollEndedParticipants(pollId);
-  //   } catch (error) {
-  //     this.logger.error(error);
-  //   }
-  // }
+  @OnEvent(MailEvent.SEND_MAIL_POLL_ENDED_PARTICIPANT)
+  async handleSendEmailPollEndParticipant(pollId: number) {
+    try {
+      await this.mailService.sendEmailPollEndedParticipants(pollId);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
 
   @OnEvent(MailEvent.SEND_MAIL_POLL_ENDED_AUTHOR)
   async handleSendEmailPollEndAuthor(pollId: number) {
