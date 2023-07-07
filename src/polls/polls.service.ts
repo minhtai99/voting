@@ -104,12 +104,10 @@ export class PollsService {
   async getPollById(user: UserDto, pollId: number) {
     const poll = await this.findPollById(pollId);
 
-    const invited = poll.invitedUsers.filter(
-      (invitedUser) => user.id === invitedUser.id,
-    );
-    if (!invited) {
-      throw new ForbiddenException();
-    }
+    this.checkInvited(user, {
+      invitedUsers: poll.invitedUsers,
+      authorId: poll.authorId,
+    });
     return { poll: new PollDto(poll), token: poll.token };
   }
 
@@ -132,7 +130,7 @@ export class PollsService {
         votes: {
           include: {
             participant: true,
-            answerOptions: true,
+            answers: true,
           },
         },
       },
@@ -146,10 +144,11 @@ export class PollsService {
         id: pollId,
       },
       include: {
+        invitedUsers: true,
         answerOptions: true,
         votes: {
           include: {
-            answerOptions: true,
+            answers: true,
           },
           where: {
             participantId: user.id,
@@ -157,7 +156,23 @@ export class PollsService {
         },
       },
     });
+    this.checkInvited(user, {
+      invitedUsers: poll.invitedUsers,
+      authorId: poll.authorId,
+    });
     return new PollDto(poll);
+  }
+
+  checkInvited(
+    user: UserDto,
+    payload: { invitedUsers: UserDto[]; authorId: number },
+  ) {
+    const invited = payload.invitedUsers.some(
+      (invitedUser) => user.id === invitedUser.id,
+    );
+    if (!invited && user.id !== payload.authorId) {
+      throw new ForbiddenException();
+    }
   }
 
   async getPrismaPollData(
@@ -283,22 +298,12 @@ export class PollsService {
 
   filterParticipantPoll(userId: number) {
     return {
-      OR: [
-        {
-          invitedUsers: {
-            some: {
-              id: userId,
-            },
-          },
+      invitedUsers: {
+        some: {
+          id: userId,
         },
-        {
-          votes: {
-            some: {
-              participantId: userId,
-            },
-          },
-        },
-      ],
+      },
+      authorId: { not: userId },
     };
   }
 
