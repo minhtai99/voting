@@ -1,3 +1,4 @@
+import { VoteGuard } from './../votes/vote.guard';
 import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
 import { MailEvent } from './../mails/mails.enum';
 import {
@@ -179,13 +180,14 @@ export class PollsController {
     return this.pollsService.getPollList(filterPollDto);
   }
 
-  @Get(':id')
+  @Get(':pollId')
+  @UseGuards(VoteGuard)
   async getPollById(
     @User() user: UserDto,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('pollId', ParseIntPipe) pollId: number,
   ) {
     try {
-      return await this.pollsService.getPollById(user, id);
+      return await this.pollsService.getPollById(user, pollId);
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }

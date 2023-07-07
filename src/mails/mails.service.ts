@@ -14,7 +14,7 @@ export class MailsService {
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
     const url = `${this.configService.get(
-      'FRONTEND_DOMAIN',
+      'FRONTEND_URL',
     )}/auth/reset-password?token=${token}`;
 
     await this.mailerService.sendMail({
@@ -29,9 +29,7 @@ export class MailsService {
 
   async sendEmailStartedPoll(pollId: number, token: string) {
     const poll = await this.pollsService.findPollById(pollId);
-    const url = `${this.configService.get(
-      'FRONTEND_DOMAIN',
-    )}/vote?token=${token}`;
+    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${token}`;
 
     Promise.all(
       poll.invitedUsers.map(

@@ -32,7 +32,7 @@ export class VotesService {
       },
       update: {
         input: createVoteDto.input,
-        answerOptions: {
+        answers: {
           set: createVoteDto.answerOptions.map((id) => ({ id })),
         },
       },
@@ -40,12 +40,12 @@ export class VotesService {
         poll: { connect: { id: poll.id } },
         input: createVoteDto.input,
         participant: { connect: { id: user.id } },
-        answerOptions: {
+        answers: {
           connect: createVoteDto.answerOptions.map((id) => ({ id })),
         },
       },
       include: {
-        answerOptions: true,
+        answers: true,
         poll: {
           include: {
             author: true,

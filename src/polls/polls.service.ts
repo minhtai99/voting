@@ -1,7 +1,6 @@
 import { AuthService } from 'src/auth/auth.service';
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -103,13 +102,6 @@ export class PollsService {
 
   async getPollById(user: UserDto, pollId: number) {
     const poll = await this.findPollById(pollId);
-
-    const invited = poll.invitedUsers.filter(
-      (invitedUser) => user.id === invitedUser.id,
-    );
-    if (!invited) {
-      throw new ForbiddenException();
-    }
     return { poll: new PollDto(poll), token: poll.token };
   }
 
@@ -132,7 +124,7 @@ export class PollsService {
         votes: {
           include: {
             participant: true,
-            answerOptions: true,
+            answers: true,
           },
         },
       },
@@ -149,7 +141,7 @@ export class PollsService {
         answerOptions: true,
         votes: {
           include: {
-            answerOptions: true,
+            answers: true,
           },
           where: {
             participantId: user.id,
@@ -283,22 +275,12 @@ export class PollsService {
 
   filterParticipantPoll(userId: number) {
     return {
-      OR: [
-        {
-          invitedUsers: {
-            some: {
-              id: userId,
-            },
-          },
+      invitedUsers: {
+        some: {
+          id: userId,
         },
-        {
-          votes: {
-            some: {
-              participantId: userId,
-            },
-          },
-        },
-      ],
+      },
+      authorId: { not: userId },
     };
   }
 

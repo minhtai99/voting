@@ -10,12 +10,14 @@ import {
   CanActivate,
   ExecutionContext,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PollStatus } from '@prisma/client';
 import { Observable } from 'rxjs';
+import { PollDto } from 'src/polls/dto/poll.dto';
 
 @Injectable()
-export class VoteTokenGuard implements CanActivate {
+export class VoteGuard implements CanActivate {
   constructor(
     private readonly pollsService: PollsService,
     private readonly authService: AuthService,
@@ -23,7 +25,13 @@ export class VoteTokenGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    return this.validated(context);
+    const request = context.switchToHttp().getRequest();
+    if (request.body.token) {
+      return this.validated(context);
+    }
+    if (request.params.pollId) {
+      return this.checkInvited(context);
+    }
   }
 
   async validated(context: ExecutionContext) {
@@ -40,6 +48,24 @@ export class VoteTokenGuard implements CanActivate {
       throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
     }
     request['poll'] = poll;
+    return this.checkInvited(context);
+  }
+
+  async checkInvited(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest();
+    let poll: PollDto;
+    if (request.params.pollId) {
+      poll = await this.pollsService.findPollById(+request.params.pollId);
+    } else {
+      poll = request['poll'];
+    }
+
+    const invited = poll.invitedUsers.some(
+      (invitedUser) => request.user.id === invitedUser.id,
+    );
+    if (!invited && request.user.id !== poll.authorId) {
+      throw new ForbiddenException();
+    }
     return true;
   }
 }
