@@ -69,7 +69,7 @@ export class MailsService {
               return answerOption.content;
             })
             .toString()
-            .replace(/,/g, ', ');
+            .replace(/,+/g, ', ');
         } else {
           participantAnswer = vote.input;
         }
@@ -92,7 +92,7 @@ export class MailsService {
                 : null,
             pollResult:
               pollResult.answer.length !== 0
-                ? pollResult.answer.toString().replace(/,/g, '\n')
+                ? pollResult.answer.toString().replace(/,+/g, '\n')
                 : null,
           },
         });
@@ -122,7 +122,7 @@ export class MailsService {
           answer: vote.answers
             .map((answer, index) => `${index + 1}. ${answer.content}`)
             .toString()
-            .replace(/,/g, '\n'),
+            .replace(/,+/g, '\n'),
         });
       });
     } else {
@@ -162,7 +162,7 @@ export class MailsService {
             : null,
         pollResult:
           pollResult.answer.length !== 0
-            ? pollResult.answer.toString().replace(/,/g, '\n')
+            ? pollResult.answer.toString().replace(/,+/g, '\n')
             : null,
       },
     });
