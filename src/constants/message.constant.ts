@@ -27,10 +27,12 @@ export const MSG_UPDATE_FAIL = 'Update fail';
 export const MSG_FILE_UPLOAD_FAILED = 'File upload failed';
 export const MSG_CURRENT_PASSWORD_INCORRECT = 'Current password incorrect!';
 export const MSG_ERROR_IMAGE_INDEX = 'Image not found';
-export const MSG_INVALID_PICTURES_FIELD = 'Invalid pictures field';
+export const MSG_INVALID_PICTURES_FIELD =
+  'Invalid image field with input type polling';
 export const MSG_POLL_NOT_FOUND = 'Poll is not found';
 export const MSG_VOTE_NOT_FOUND = 'Vote is not found';
 export const MSG_USER_NOT_AUTHOR = 'You are not the author of this poll';
 export const MSG_POLL_STATUS_NOT_ONGOING = 'Poll status is not Ongoing';
 export const MSG_CURRENT_PASS_MUST_DIFFERENT_NEW_PASS =
   'New Password must be different from your Current Password';
+export const MSG_ERROR_UPSERT_POLL_RESULT = 'This Poll was created Poll Result';

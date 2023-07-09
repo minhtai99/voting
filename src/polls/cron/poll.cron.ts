@@ -39,7 +39,7 @@ export class PollSchedule {
             poll.id,
             PollStatus.completed,
           );
-          await this.pollResultService.createPollResult(poll.id);
+          await this.pollResultService.upsertPollResult(poll.id);
 
           this.eventEmitter.emit(
             MailEvent.SEND_MAIL_POLL_ENDED_PARTICIPANT,

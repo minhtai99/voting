@@ -1,6 +1,8 @@
+import { MSG_ERROR_UPSERT_POLL_RESULT } from './../constants/message.constant';
+import { PollStatus } from '@prisma/client';
 import { PollsService } from './../polls/polls.service';
 import { PrismaService } from './../prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PollResultService {
@@ -9,7 +11,7 @@ export class PollResultService {
     private readonly pollsService: PollsService,
   ) {}
 
-  async createPollResult(pollId: number) {
+  async upsertPollResult(pollId: number) {
     const answer: string[] = [];
     const poll = await this.pollsService.findPollById(pollId);
     poll.answerOptions.sort((a, b) => b._count.votes - a._count.votes);
@@ -18,8 +20,17 @@ export class PollResultService {
         `${answerOption.content} - ${answerOption._count.votes} votes`,
       );
     }
-    await this.prisma.pollResult.create({
-      data: {
+
+    if (poll.status !== PollStatus.completed) {
+      throw new BadRequestException(MSG_ERROR_UPSERT_POLL_RESULT);
+    }
+
+    await this.prisma.pollResult.upsert({
+      where: { pollId },
+      update: {
+        answer,
+      },
+      create: {
         poll: {
           connect: {
             id: pollId,
