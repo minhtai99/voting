@@ -73,6 +73,7 @@ export class MailsService {
         } else {
           participantAnswer = vote.input;
         }
+
         await this.mailerService.sendMail({
           to: vote.participant.email,
           subject: `[Result] ${pollResult.poll.title}`,
@@ -131,7 +132,10 @@ export class MailsService {
           email: vote.participant.email,
           name: vote.participant.firstName + ' ' + vote.participant.lastName,
           time: vote.createdAt.toLocaleString(),
-          answer: vote.input ?? vote.answers[0].content,
+          answer:
+            pollResult.poll.answerType === AnswerType.input
+              ? vote.input
+              : vote.answers[0].content,
         });
       });
     }
@@ -140,6 +144,7 @@ export class MailsService {
       `${pollResult.poll.id}_poll_result`,
       jsonVotes,
     );
+
     await this.mailerService.sendMail({
       to: pollResult.poll.author.email,
       subject: `[Result] ${pollResult.poll.title}`,
