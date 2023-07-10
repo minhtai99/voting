@@ -57,6 +57,9 @@ export class PollDto implements Poll {
   @ApiProperty()
   authorId: number;
 
+  @ApiProperty({ isArray: true, type: AnswerOptionDto })
+  answer?: AnswerOptionDto[];
+
   @ApiProperty({ isArray: true, type: UserDto })
   invitedUsers?: UserDto[];
 

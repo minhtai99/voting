@@ -13,7 +13,6 @@ import { join } from 'path';
 import { PollsModule } from './polls/polls.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { VotesModule } from './votes/votes.module';
-import { PollResultModule } from './poll-result/poll-result.module';
 
 @Module({
   imports: [
@@ -33,7 +32,6 @@ import { PollResultModule } from './poll-result/poll-result.module';
     PollsModule,
     ScheduleModule.forRoot(),
     VotesModule,
-    PollResultModule,
   ],
   controllers: [],
   providers: [

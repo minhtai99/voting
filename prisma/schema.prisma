@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch"]
 }
 
@@ -54,12 +54,12 @@ model Poll {
   status        PollStatus
   token         String?
 
+  answer        AnswerOption[] @relation("PollResult")
   invitedUsers  User[]         @relation("InvitationToPoll")
   answerOptions AnswerOption[]
   votes         Vote[]
   author        User           @relation(fields: [authorId], references: [id])
   authorId      Int
-  pollResult    PollResult?
 }
 
 model AnswerOption {
@@ -70,9 +70,10 @@ model AnswerOption {
   content    String
   pictureUrl String?
 
-  votes  Vote[]
-  poll   Poll   @relation(fields: [pollId], references: [id])
-  pollId Int
+  votes      Vote[]
+  poll       Poll   @relation(fields: [pollId], references: [id])
+  pollId     Int
+  pollResult Poll[] @relation("PollResult")
 }
 
 model Vote {
@@ -89,15 +90,4 @@ model Vote {
   participantId Int
 
   @@unique([pollId, participantId])
-}
-
-model PollResult {
-  id        Int      @id @unique @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
-
-  answer String[]
-
-  poll   Poll @relation(fields: [pollId], references: [id])
-  pollId Int  @unique
 }

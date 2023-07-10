@@ -60,6 +60,7 @@ export class PollsService {
         invitedUsers: true,
       },
     });
+
     poll.token = await this.updatePollToken(poll.id);
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
@@ -308,5 +309,25 @@ export class PollsService {
       },
     });
     return token;
+  }
+
+  async updatePollResultAnswer(pollId: number) {
+    const poll = await this.findPollById(pollId);
+    const maxVote = poll.answerOptions.reduce((prev, current) =>
+      prev._count.votes > current._count.votes ? prev : current,
+    );
+
+    const maxVoteArr = poll.answerOptions.filter(
+      (answerOption) => answerOption._count.votes === maxVote._count.votes,
+    );
+    const payload = {
+      where: { id: poll.id },
+      data: {
+        answer: {
+          connect: maxVoteArr.map((answerOption) => ({ id: answerOption.id })),
+        },
+      },
+    };
+    this.updatePrismaPoll(payload);
   }
 }

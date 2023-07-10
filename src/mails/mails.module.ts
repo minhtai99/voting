@@ -7,7 +7,6 @@ import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { MailListener } from './listeners/mail.listener';
 import { FilesModule } from '../files/files.module';
-import { PollResultModule } from '../poll-result/poll-result.module';
 
 @Global()
 @Module({
@@ -37,7 +36,6 @@ import { PollResultModule } from '../poll-result/poll-result.module';
     }),
     PollsModule,
     FilesModule,
-    PollResultModule,
   ],
   controllers: [],
   providers: [MailsService, MailListener],

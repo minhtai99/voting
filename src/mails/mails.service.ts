@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { UserDto } from '../users/dto/user.dto';
 import { AnswerType } from '@prisma/client';
 import { FilesService } from '../files/files.service';
-import { PollResultService } from '../poll-result/poll-result.service';
 import { SummaryVoteExcel, VoteExcel } from './interfaces/send-mail.interface';
 
 @Injectable()
@@ -15,7 +14,6 @@ export class MailsService {
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
     private readonly filesService: FilesService,
-    private readonly pollResultService: PollResultService,
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
@@ -56,15 +54,20 @@ export class MailsService {
   }
 
   async sendEmailPollEndedParticipants(pollId: number) {
-    const pollResult = await this.pollResultService.getPollResultByPollId(
-      pollId,
-    );
+    const poll = await this.pollsService.findPollById(pollId);
+    const pollResult: string[] = [];
+    poll.answerOptions.sort((a, b) => b._count.votes - a._count.votes);
+    for (const answerOption of poll.answerOptions) {
+      pollResult.push(
+        `${answerOption.content} - ${answerOption._count.votes} votes`,
+      );
+    }
 
     Promise.all(
-      pollResult.poll.votes.map(async (vote) => {
+      poll.votes.map(async (vote) => {
         let participantAnswer: string;
-        if (pollResult.poll.answerType !== AnswerType.input) {
-          participantAnswer = pollResult.poll.answerOptions
+        if (poll.answerType !== AnswerType.input) {
+          participantAnswer = poll.answerOptions
             .map((answerOption) => {
               return answerOption.content;
             })
@@ -76,24 +79,19 @@ export class MailsService {
 
         await this.mailerService.sendMail({
           to: vote.participant.email,
-          subject: `[Result] ${pollResult.poll.title}`,
+          subject: `[Result] ${poll.title}`,
           template: './end-poll-participant',
           context: {
-            question: pollResult.poll.question,
+            question: poll.question,
             receiver:
               vote.participant.firstName + ' ' + vote.participant.lastName,
-            author:
-              pollResult.poll.author.firstName +
-              ' ' +
-              pollResult.poll.author.lastName,
+            author: poll.author.firstName + ' ' + poll.author.lastName,
             participantAnswer,
             htmlPollResult:
-              pollResult.poll.answerType !== AnswerType.input
-                ? 'Poll Result:'
-                : null,
+              poll.answerType !== AnswerType.input ? 'Poll Result:' : null,
             pollResult:
-              pollResult.answer.length !== 0
-                ? pollResult.answer.toString().replace(/,+/g, '\n')
+              pollResult.length !== 0
+                ? pollResult.toString().replace(/,+/g, '\n')
                 : null,
           },
         });
@@ -102,24 +100,29 @@ export class MailsService {
   }
 
   async sendEmailPollEndedAuthor(pollId: number) {
-    const pollResult = await this.pollResultService.getPollResultByPollId(
-      pollId,
-    );
+    const poll = await this.pollsService.findPollById(pollId);
+    const pollResult: string[] = [];
+    poll.answerOptions.sort((a, b) => b._count.votes - a._count.votes);
+    for (const answerOption of poll.answerOptions) {
+      pollResult.push(
+        `${answerOption.content} - ${answerOption._count.votes} votes`,
+      );
+    }
 
     const jsonVotes: (VoteExcel | SummaryVoteExcel)[] = [];
     jsonVotes.push({
-      title: pollResult.poll.title,
-      question: pollResult.poll.question,
-      startTime: pollResult.poll.startDate.toLocaleString(),
-      endTime: pollResult.poll.endDate.toLocaleString(),
-      answerType: pollResult.poll.answerType,
+      title: poll.title,
+      question: poll.question,
+      startTime: poll.startDate.toLocaleString(),
+      endTime: poll.endDate.toLocaleString(),
+      answerType: poll.answerType,
     });
-    if (pollResult.poll.answerType === AnswerType.checkbox) {
-      pollResult.poll.votes.map((vote) => {
+    if (poll.answerType === AnswerType.checkbox) {
+      poll.votes.map((vote) => {
         jsonVotes.push({
           email: vote.participant.email,
           name: vote.participant.firstName + ' ' + vote.participant.lastName,
-          time: vote.createdAt.toLocaleString(),
+          time: vote.updatedAt.toLocaleString(),
           answer: vote.answers
             .map((answer, index) => `${index + 1}. ${answer.content}`)
             .toString()
@@ -127,13 +130,13 @@ export class MailsService {
         });
       });
     } else {
-      pollResult.poll.votes.map((vote) => {
+      poll.votes.map((vote) => {
         jsonVotes.push({
           email: vote.participant.email,
           name: vote.participant.firstName + ' ' + vote.participant.lastName,
-          time: vote.createdAt.toLocaleString(),
+          time: vote.updatedAt.toLocaleString(),
           answer:
-            pollResult.poll.answerType === AnswerType.input
+            poll.answerType === AnswerType.input
               ? vote.input
               : vote.answers[0].content,
         });
@@ -141,13 +144,13 @@ export class MailsService {
     }
 
     const excelFile = await this.filesService.convertJsonToExcel(
-      `${pollResult.poll.id}_poll_result`,
+      `${poll.id}_poll_result`,
       jsonVotes,
     );
 
     await this.mailerService.sendMail({
-      to: pollResult.poll.author.email,
-      subject: `[Result] ${pollResult.poll.title}`,
+      to: poll.author.email,
+      subject: `[Result] ${poll.title}`,
       template: './end-poll-author',
       attachments: [
         {
@@ -156,18 +159,13 @@ export class MailsService {
         },
       ],
       context: {
-        question: pollResult.poll.question,
-        author:
-          pollResult.poll.author.firstName +
-          ' ' +
-          pollResult.poll.author.lastName,
+        question: poll.question,
+        author: poll.author.firstName + ' ' + poll.author.lastName,
         htmlPollResult:
-          pollResult.poll.answerType !== AnswerType.input
-            ? 'Poll Result:'
-            : null,
+          poll.answerType !== AnswerType.input ? 'Poll Result:' : null,
         pollResult:
-          pollResult.answer.length !== 0
-            ? pollResult.answer.toString().replace(/,+/g, '\n')
+          pollResult.length !== 0
+            ? pollResult.toString().replace(/,+/g, '\n')
             : null,
       },
     });
