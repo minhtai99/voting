@@ -6,6 +6,7 @@ import { MailsService } from './mails.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { MailListener } from './listeners/mail.listener';
+import { FilesModule } from '../files/files.module';
 
 @Global()
 @Module({
@@ -34,6 +35,7 @@ import { MailListener } from './listeners/mail.listener';
       inject: [ConfigService],
     }),
     PollsModule,
+    FilesModule,
   ],
   controllers: [],
   providers: [MailsService, MailListener],

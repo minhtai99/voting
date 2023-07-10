@@ -60,6 +60,7 @@ export class PollsService {
         invitedUsers: true,
       },
     });
+
     poll.token = await this.updatePollToken(poll.id);
     return {
       message: MSG_SUCCESSFUL_POLL_CREATION,
@@ -262,15 +263,27 @@ export class PollsService {
             },
             status: 'pending',
           },
+          {
+            endDate: {
+              gte: new Date(current.getTime() - 60000 * 6), // current - 6m
+              lte: current,
+            },
+            status: 'ongoing',
+          },
         ],
       },
       include: {
         votes: true,
         author: true,
         invitedUsers: true,
+        answerOptions: {
+          include: {
+            _count: true,
+          },
+        },
       },
     });
-    return polls.map((poll) => new PollDto(poll));
+    return polls;
   }
 
   filterParticipantPoll(userId: number) {
@@ -296,5 +309,25 @@ export class PollsService {
       },
     });
     return token;
+  }
+
+  async updatePollResultAnswer(pollId: number) {
+    const poll = await this.findPollById(pollId);
+    const maxVote = poll.answerOptions.reduce((prev, current) =>
+      prev._count.votes > current._count.votes ? prev : current,
+    );
+
+    const maxVoteArr = poll.answerOptions.filter(
+      (answerOption) => answerOption._count.votes === maxVote._count.votes,
+    );
+    const payload = {
+      where: { id: poll.id },
+      data: {
+        answer: {
+          connect: maxVoteArr.map((answerOption) => ({ id: answerOption.id })),
+        },
+      },
+    };
+    this.updatePrismaPoll(payload);
   }
 }

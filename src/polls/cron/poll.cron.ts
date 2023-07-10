@@ -31,6 +31,24 @@ export class PollSchedule {
             payloadInvitation,
           );
         }
+
+        if (poll.status === PollStatus.ongoing) {
+          await this.pollsService.updatePollStatus(
+            poll.id,
+            PollStatus.completed,
+          );
+          await this.pollsService.updatePollResultAnswer(poll.id);
+
+          this.eventEmitter.emit(
+            MailEvent.SEND_MAIL_POLL_ENDED_PARTICIPANT,
+            poll.id,
+          );
+
+          this.eventEmitter.emit(
+            MailEvent.SEND_MAIL_POLL_ENDED_AUTHOR,
+            poll.id,
+          );
+        }
       }),
     )
       .then(() => {
