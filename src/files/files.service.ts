@@ -5,7 +5,6 @@ import { existsSync, mkdirSync } from 'fs';
 import { fileConfig, fileFilter } from '../helpers/files.helper';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as excelJs from 'exceljs';
-import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 
 interface UploadFile {
@@ -15,7 +14,6 @@ interface UploadFile {
 
 @Injectable()
 export class FilesService {
-  constructor(private readonly configService: ConfigService) {}
   private readonly logger = new Logger(FilesService.name);
 
   static multerOptions(file: UploadFile): MulterOptions {
@@ -63,8 +61,10 @@ export class FilesService {
 
   deleteFile(url: string, folder: string) {
     if (url === null) return;
-    const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-    fs.unlink(`${destination}/${url.slice(url.indexOf(folder))}`, (err) => err);
+    fs.unlink(
+      `${fileConfig.dest}/${url.slice(url.indexOf(folder))}`,
+      (err) => err,
+    );
   }
 
   getPictureUrlAndBackgroundUrl(

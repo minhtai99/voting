@@ -47,7 +47,6 @@ export class CreatePollDto {
   startDate: Date;
 
   @GreaterComparison<CreatePollDto>('startDate')
-  @ValidateIf((e) => e.startDate)
   @MinDate(new Date())
   @IsDate()
   @Transform(({ value }) => new Date(value))

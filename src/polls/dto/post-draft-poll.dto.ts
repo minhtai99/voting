@@ -7,10 +7,10 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { UpdatePollDto } from './update-poll.dto';
+import { PostPollDto } from './post-poll.dto';
 
-export class UpdateDraftPollDto extends PartialType(
-  OmitType(UpdatePollDto, ['title', 'invitedUsers']),
+export class SaveDraftPollDto extends PartialType(
+  OmitType(PostPollDto, ['title', 'invitedUsers']),
 ) {
   @MaxLength(200)
   @IsString()

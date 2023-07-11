@@ -1,5 +1,5 @@
 import { InviteUsersDto } from './dto/invite-user.dto';
-import { UpdatePollDto } from './dto/update-poll.dto';
+import { PostPollDto } from './dto/post-poll.dto';
 import { VoteGuard } from './../votes/vote.guard';
 import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
 import { MailEvent } from './../mails/mails.enum';
@@ -31,7 +31,10 @@ import { FieldName } from '../files/files.enum';
 import * as fs from 'fs';
 import {
   MSG_POLL_NOT_FOUND,
-  MSG_POLL_STATUS_NOT_ONGOING,
+  MSG_POLL_STATUS_MUST_ONGOING,
+  MSG_POLL_STATUS_MUST_PENDING,
+  MSG_POLL_STATUS_WAS_COMPLETED,
+  MSG_POLL_STATUS_WAS_ONGOING,
   MSG_SAVE_DRAFT_SUCCESSFUL,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from '../constants/message.constant';
@@ -42,7 +45,7 @@ import { UploadFilesErrorsInterceptor } from './interceptors/poll-errors.interce
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PollAuthorGuard } from './poll-author.guard';
 import { PollDto } from './dto/poll.dto';
-import { UpdateDraftPollDto } from './dto/update-draft-poll.dto';
+import { SaveDraftPollDto } from './dto/post-draft-poll.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -50,7 +53,6 @@ import { UpdateDraftPollDto } from './dto/update-draft-poll.dto';
 export class PollsController {
   constructor(
     private readonly pollsService: PollsService,
-    private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -78,23 +80,16 @@ export class PollsController {
     },
   ) {
     try {
-      const { picturesUrl, backgroundUrl } =
-        this.filesService.getPictureUrlAndBackgroundUrl(
-          images.pictures,
-          images.background,
-        );
-      if (createPollDto.startDate === undefined) {
-        createPollDto.status = PollStatus.ongoing;
-        createPollDto.startDate = new Date();
-      } else {
-        createPollDto.status = PollStatus.pending;
-      }
+      const { status, startDate } =
+        this.pollsService.checkStartDateAndEndData(createPollDto);
+      createPollDto.status = status;
+      createPollDto.startDate = startDate;
 
       const poll = await this.pollsService.createPoll(
         user,
         createPollDto,
-        picturesUrl,
-        backgroundUrl,
+        images.pictures,
+        images.background,
       );
       const payloadInvitation: MailInvitationVote = {
         pollId: poll.id,
@@ -147,17 +142,12 @@ export class PollsController {
     },
   ) {
     try {
-      const { picturesUrl, backgroundUrl } =
-        this.filesService.getPictureUrlAndBackgroundUrl(
-          images.pictures,
-          images.background,
-        );
       createDraftPollDto.status = PollStatus.draft;
       const poll = await this.pollsService.createPoll(
         user,
         createDraftPollDto,
-        picturesUrl,
-        backgroundUrl,
+        images.pictures,
+        images.background,
       );
       return {
         message: MSG_SAVE_DRAFT_SUCCESSFUL,
@@ -213,10 +203,10 @@ export class PollsController {
 
   @Patch('invite-people')
   @UseGuards(PollAuthorGuard)
-  async updateInvitedUsers(@Req() req: Request, @Body() body: InviteUsersDto) {
+  async updateInvitePeople(@Req() req: Request, @Body() body: InviteUsersDto) {
     const poll: PollDto = req['poll'];
     if (poll.status !== PollStatus.ongoing) {
-      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
+      throw new BadRequestException(MSG_POLL_STATUS_MUST_ONGOING);
     }
     return await this.pollsService.updateInvitePeople(poll, body.invitedUsers);
   }
@@ -226,7 +216,10 @@ export class PollsController {
   async startPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
     if (poll.status === PollStatus.ongoing) {
-      throw new BadRequestException('Poll Status was Ongoing');
+      throw new BadRequestException(MSG_POLL_STATUS_WAS_ONGOING);
+    }
+    if (poll.status !== PollStatus.pending) {
+      throw new BadRequestException(MSG_POLL_STATUS_MUST_PENDING);
     }
 
     const updatePoll = await this.pollsService.updatePrismaPoll({
@@ -242,7 +235,10 @@ export class PollsController {
   async endPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
     if (poll.status === PollStatus.completed) {
-      throw new BadRequestException('Poll Status was Completed');
+      throw new BadRequestException(MSG_POLL_STATUS_WAS_COMPLETED);
+    }
+    if (poll.status !== PollStatus.ongoing) {
+      throw new BadRequestException(MSG_POLL_STATUS_MUST_ONGOING);
     }
 
     const updatePoll = await this.pollsService.updatePrismaPoll({
@@ -269,7 +265,7 @@ export class PollsController {
   )
   async postPoll(
     @Req() req: Request,
-    @Body() updatePollDto: UpdatePollDto,
+    @Body() postPollDto: PostPollDto,
     @UploadedFiles()
     images: {
       pictures?: Express.Multer.File[];
@@ -278,22 +274,16 @@ export class PollsController {
   ) {
     try {
       const poll: PollDto = req['poll'];
-      const { picturesUrl, backgroundUrl } =
-        this.filesService.getPictureUrlAndBackgroundUrl(
-          images.pictures,
-          images.background,
-        );
-      if (updatePollDto.startDate === undefined) {
-        updatePollDto.status = PollStatus.ongoing;
-        updatePollDto.startDate = new Date();
-      } else {
-        updatePollDto.status = PollStatus.pending;
-      }
+      const { status, startDate } =
+        this.pollsService.checkStartDateAndEndData(postPollDto);
+      postPollDto.status = status;
+      postPollDto.startDate = startDate;
+
       const updatePoll = await this.pollsService.updatePoll(
         poll,
-        updatePollDto,
-        picturesUrl,
-        backgroundUrl,
+        postPollDto,
+        images.pictures,
+        images.background,
       );
       return {
         message: MSG_SUCCESSFUL_POLL_CREATION,
@@ -328,7 +318,7 @@ export class PollsController {
   )
   async saveDraftPoll(
     @Req() req: Request,
-    @Body() updatePollDto: UpdateDraftPollDto,
+    @Body() updatePollDto: SaveDraftPollDto,
     @UploadedFiles()
     images: {
       pictures?: Express.Multer.File[];
@@ -337,18 +327,13 @@ export class PollsController {
   ) {
     try {
       const poll: PollDto = req['poll'];
-      const { picturesUrl, backgroundUrl } =
-        this.filesService.getPictureUrlAndBackgroundUrl(
-          images.pictures,
-          images.background,
-        );
       updatePollDto.status = PollStatus.draft;
 
       const updatePoll = await this.pollsService.updatePoll(
         poll,
         updatePollDto,
-        picturesUrl,
-        backgroundUrl,
+        images.pictures,
+        images.background,
       );
       return {
         message: MSG_SAVE_DRAFT_SUCCESSFUL,

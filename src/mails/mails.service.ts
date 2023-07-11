@@ -64,19 +64,20 @@ export class MailsService {
     }`;
 
     Promise.all(
-      newInvitedUsers.map(async (userId) => {
-        const receiver = await this.usersService.findUserById(userId);
-        await this.mailerService.sendMail({
-          to: receiver.email,
-          subject: `[Invitation] ${poll.title}`,
-          template: './invitation-vote',
-          context: {
-            url,
-            author: poll.author.firstName + ' ' + poll.author.lastName,
-            question: poll.question,
-            endTime: poll.endDate,
-          },
-        });
+      poll.invitedUsers.map(async (receiver) => {
+        if (newInvitedUsers.some((userId) => userId === receiver.id)) {
+          await this.mailerService.sendMail({
+            to: receiver.email,
+            subject: `[Invitation] ${poll.title}`,
+            template: './invitation-vote',
+            context: {
+              url,
+              author: poll.author.firstName + ' ' + poll.author.lastName,
+              question: poll.question,
+              endTime: poll.endDate,
+            },
+          });
+        }
       }),
     );
   }

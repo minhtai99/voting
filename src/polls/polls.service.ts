@@ -27,7 +27,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
 import { AnswerOptionDto } from '../answer-option/dto/answer-option.dto';
 import { AnswerOptionService } from '../answer-option/answer-option.service';
-import { UpdatePollDto } from './dto/update-poll.dto';
+import { PostPollDto } from './dto/post-poll.dto';
 
 @Injectable()
 export class PollsService {
@@ -44,9 +44,11 @@ export class PollsService {
   async createPoll(
     user: UserDto,
     createPollDto: Partial<CreatePollDto>,
-    picturesUrl: string[],
-    backgroundUrl: string | null,
+    pictures?: Express.Multer.File[],
+    background?: Express.Multer.File[],
   ) {
+    const { picturesUrl, backgroundUrl } =
+      this.filesService.getPictureUrlAndBackgroundUrl(pictures, background);
     const data = await this.getPrismaPollData(
       createPollDto,
       picturesUrl,
@@ -77,12 +79,14 @@ export class PollsService {
 
   async updatePoll(
     oldPoll: PollDto,
-    updatePollDto: Partial<UpdatePollDto>,
-    picturesUrl?: string[],
-    backgroundUrl?: string | null,
+    postPollDto: Partial<PostPollDto>,
+    pictures?: Express.Multer.File[],
+    background?: Express.Multer.File[],
   ) {
+    const { picturesUrl, backgroundUrl } =
+      this.filesService.getPictureUrlAndBackgroundUrl(pictures, background);
     const updateData = await this.getPrismaPollData(
-      updatePollDto,
+      postPollDto,
       picturesUrl,
       backgroundUrl,
     );
@@ -90,7 +94,7 @@ export class PollsService {
     // delete AnswerOptions
     if (
       oldPoll.answerOptions.length !== 0 &&
-      updatePollDto.answerType !== AnswerType.input
+      postPollDto.answerType !== AnswerType.input
     ) {
       const arrayId = oldPoll.answerOptions
         .filter((answerOption) =>
@@ -116,7 +120,7 @@ export class PollsService {
     }
 
     //delete PictureUrl and files
-    if (updatePollDto.answerType !== AnswerType.input) {
+    if (postPollDto.answerType !== AnswerType.input) {
       const arrayId = updateData.answerOptions
         .filter(
           (answerOption) => answerOption.pictureUrl === null && answerOption.id,
@@ -170,6 +174,21 @@ export class PollsService {
     });
 
     return new PollDto(updatedPoll);
+  }
+
+  checkStartDateAndEndData(poll: Partial<PostPollDto>) {
+    if (!poll.status) {
+      if (poll.startDate === undefined && poll.endDate !== undefined) {
+        return {
+          status: PollStatus.ongoing,
+          startDate: new Date(),
+        };
+      } else {
+        return {
+          status: PollStatus.pending,
+        };
+      }
+    }
   }
 
   async updateInvitePeople(poll: PollDto, invitedUsers: number[]) {
@@ -289,7 +308,7 @@ export class PollsService {
   }
 
   async getPrismaPollData(
-    pollDto: Partial<UpdatePollDto>,
+    pollDto: Partial<PostPollDto>,
     picturesUrl: string[],
     backgroundUrl: string | null,
   ) {

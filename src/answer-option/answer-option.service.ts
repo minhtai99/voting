@@ -21,7 +21,7 @@ export class AnswerOptionService {
   }
 
   async deletePictures(arrayId: number[]) {
-    for (const id of arrayId) {
+    for await (const id of arrayId) {
       const answerOption = await this.prisma.answerOption.findUnique({
         where: { id },
       });
