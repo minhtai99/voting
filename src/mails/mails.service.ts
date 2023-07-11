@@ -6,6 +6,7 @@ import { UserDto } from '../users/dto/user.dto';
 import { AnswerType } from '@prisma/client';
 import { FilesService } from '../files/files.service';
 import { SummaryVoteExcel, VoteExcel } from './interfaces/send-mail.interface';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class MailsService {
@@ -14,6 +15,7 @@ export class MailsService {
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
     private readonly filesService: FilesService,
+    private readonly usersService: UsersService,
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
@@ -31,9 +33,11 @@ export class MailsService {
     });
   }
 
-  async sendEmailStartedPoll(pollId: number, token: string) {
+  async sendEmailStartedPoll(pollId: number) {
     const poll = await this.pollsService.findPollById(pollId);
-    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${token}`;
+    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
+      poll.token
+    }`;
 
     Promise.all(
       poll.invitedUsers.map(
@@ -50,6 +54,30 @@ export class MailsService {
             },
           }),
       ),
+    );
+  }
+
+  async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
+    const poll = await this.pollsService.findPollById(pollId);
+    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
+      poll.token
+    }`;
+
+    Promise.all(
+      newInvitedUsers.map(async (userId) => {
+        const receiver = await this.usersService.findUserById(userId);
+        await this.mailerService.sendMail({
+          to: receiver.email,
+          subject: `[Invitation] ${poll.title}`,
+          template: './invitation-vote',
+          context: {
+            url,
+            author: poll.author.firstName + ' ' + poll.author.lastName,
+            question: poll.question,
+            endTime: poll.endDate,
+          },
+        });
+      }),
     );
   }
 
