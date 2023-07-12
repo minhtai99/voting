@@ -10,10 +10,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../users/dto/user.dto';
 import { PollDto } from './dto/poll.dto';
 import {
+  MSG_END_DATE_GREATER_THAN_START_DATE,
   MSG_ERROR_IMAGE_INDEX,
   MSG_ERROR_SEND_MAIL_POLL,
   MSG_INVALID_PICTURES_FIELD,
   MSG_POLL_NOT_FOUND,
+  MSG_START_DATE_LESS_THAN_END_DATE,
   MSG_UPDATE_SUCCESSFUL,
 } from '../constants/message.constant';
 import { AnswerType, PollStatus } from '@prisma/client';
@@ -223,7 +225,7 @@ export class PollsService {
     };
   }
 
-  async getPollById(user: UserDto, pollId: number) {
+  async getPollById(pollId: number) {
     const poll = await this.findPollById(pollId);
     return { poll: new PollDto(poll), token: poll.token };
   }
@@ -456,6 +458,7 @@ export class PollsService {
 
   async updatePollResultAnswer(pollId: number) {
     const poll = await this.findPollById(pollId);
+    if (poll.answerOptions.length === 0) return;
     const maxVote = poll.answerOptions.reduce((prev, current) =>
       prev._count.votes > current._count.votes ? prev : current,
     );
@@ -589,5 +592,31 @@ export class PollsService {
         });
     }
     return;
+  }
+
+  checkStartDateAndEndDate(
+    oldPoll: PollDto,
+    editPollDto: Partial<PostPollDto>,
+  ) {
+    if (editPollDto.endDate && editPollDto.startDate === undefined) {
+      if (
+        !(
+          new Date(editPollDto.endDate).valueOf() >
+          new Date(oldPoll.startDate).valueOf()
+        )
+      ) {
+        throw new BadRequestException(MSG_END_DATE_GREATER_THAN_START_DATE);
+      }
+    }
+    if (editPollDto.startDate && editPollDto.endDate === undefined) {
+      if (
+        !(
+          new Date(oldPoll.endDate).valueOf() >
+          new Date(editPollDto.startDate).valueOf()
+        )
+      ) {
+        throw new BadRequestException(MSG_START_DATE_LESS_THAN_END_DATE);
+      }
+    }
   }
 }
