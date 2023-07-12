@@ -28,13 +28,10 @@ import { User } from '../decorators/user.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
-import * as fs from 'fs';
 import {
   MSG_POLL_NOT_FOUND,
   MSG_POLL_STATUS_MUST_ONGOING,
   MSG_POLL_STATUS_MUST_PENDING,
-  MSG_POLL_STATUS_WAS_COMPLETED,
-  MSG_POLL_STATUS_WAS_ONGOING,
   MSG_SAVE_DRAFT_SUCCESSFUL,
   MSG_SUCCESSFUL_POLL_CREATION,
 } from '../constants/message.constant';
@@ -105,15 +102,7 @@ export class PollsController {
         poll,
       };
     } catch (error) {
-      if (images !== undefined) {
-        if (images.background !== undefined)
-          fs.unlink(images.background[0].path, (err) => err);
-        if (images.pictures !== undefined)
-          images.pictures.forEach((picture) => {
-            if (picture === undefined) return;
-            fs.unlink(picture.path, (err) => err);
-          });
-      }
+      this.pollsService.deleteFilesIfThereIsAnError(images);
       throw new HttpException(error.response, error.status);
     }
   }
@@ -154,15 +143,7 @@ export class PollsController {
         poll,
       };
     } catch (error) {
-      if (images !== undefined) {
-        if (images.background !== undefined)
-          fs.unlink(images.background[0].path, (err) => err);
-        if (images.pictures !== undefined)
-          images.pictures.forEach((picture) => {
-            if (picture === undefined) return;
-            fs.unlink(picture.path, (err) => err);
-          });
-      }
+      this.pollsService.deleteFilesIfThereIsAnError(images);
       throw new HttpException(error.response, error.status);
     }
   }
@@ -215,9 +196,6 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   async startPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    if (poll.status === PollStatus.ongoing) {
-      throw new BadRequestException(MSG_POLL_STATUS_WAS_ONGOING);
-    }
     if (poll.status !== PollStatus.pending) {
       throw new BadRequestException(MSG_POLL_STATUS_MUST_PENDING);
     }
@@ -234,9 +212,6 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   async endPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    if (poll.status === PollStatus.completed) {
-      throw new BadRequestException(MSG_POLL_STATUS_WAS_COMPLETED);
-    }
     if (poll.status !== PollStatus.ongoing) {
       throw new BadRequestException(MSG_POLL_STATUS_MUST_ONGOING);
     }
@@ -290,14 +265,7 @@ export class PollsController {
         poll: updatePoll,
       };
     } catch (error) {
-      if (images !== undefined) {
-        if (images.background !== undefined)
-          fs.unlink(images.background[0].path, (err) => err);
-        if (images.pictures !== undefined)
-          images.pictures.forEach((picture) => {
-            fs.unlink(picture.path, (err) => err);
-          });
-      }
+      this.pollsService.deleteFilesIfThereIsAnError(images);
       throw new HttpException(error.response, error.status);
     }
   }
@@ -340,14 +308,7 @@ export class PollsController {
         poll: updatePoll,
       };
     } catch (error) {
-      if (images !== undefined) {
-        if (images.background !== undefined)
-          fs.unlink(images.background[0].path, (err) => err);
-        if (images.pictures !== undefined)
-          images.pictures.forEach((picture) => {
-            fs.unlink(picture.path, (err) => err);
-          });
-      }
+      this.pollsService.deleteFilesIfThereIsAnError(images);
       throw new HttpException(error.response, error.status);
     }
   }

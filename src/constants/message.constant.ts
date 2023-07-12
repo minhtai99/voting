@@ -43,5 +43,3 @@ export const MSG_ERROR_SEND_MAIL_POLL =
   'Poll Status are not Ongoing or Completed';
 export const MSG_POLL_STATUS_MUST_ONGOING = 'Poll status must be Ongoing';
 export const MSG_POLL_STATUS_MUST_PENDING = 'Poll Status must be Pending';
-export const MSG_POLL_STATUS_WAS_ONGOING = 'Poll Status was Ongoing';
-export const MSG_POLL_STATUS_WAS_COMPLETED = 'Poll Status was Completed';

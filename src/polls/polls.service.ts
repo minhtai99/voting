@@ -92,54 +92,24 @@ export class PollsService {
     );
 
     // delete AnswerOptions
-    if (
-      oldPoll.answerOptions.length !== 0 &&
-      postPollDto.answerType !== AnswerType.input
-    ) {
-      const arrayId = oldPoll.answerOptions
-        .filter((answerOption) =>
-          updateData.answerOptions.every((item) => answerOption.id !== item.id),
-        )
-        .map((answerOption) => answerOption.id);
-
-      await this.answerOptionService.deleteManyAnswerOption(arrayId);
-    } else {
-      const arrayId = oldPoll.answerOptions.map(
-        (answerOption) => answerOption.id,
-      );
-      await this.answerOptionService.deleteManyAnswerOption(arrayId);
-    }
+    await this.updatePollDeleteAnswerOptions(
+      oldPoll,
+      postPollDto,
+      updateData.answerOptions,
+    );
 
     // delete backgroundUrl and file
-    if (oldPoll.backgroundUrl !== null) {
-      if (updateData.payload.backgroundUrl !== oldPoll.backgroundUrl)
-        this.filesService.deleteFile(oldPoll.backgroundUrl, 'images');
-
-      if (updateData.payload.backgroundUrl === undefined)
-        updateData.payload.backgroundUrl = null;
-    }
+    await this.updatePollDeleteBackgroundUrlAndFile(
+      oldPoll,
+      updateData.payload.backgroundUrl,
+    );
 
     //delete PictureUrl and files
-    if (postPollDto.answerType !== AnswerType.input) {
-      const arrayId = updateData.answerOptions
-        .filter(
-          (answerOption) => answerOption.pictureUrl === null && answerOption.id,
-        )
-        .map((item) => item.id);
-      await this.answerOptionService.deletePictures(arrayId);
-
-      const picturesUrl = oldPoll.answerOptions
-        .filter((answerOption) =>
-          updateData.answerOptions.every(
-            (item) =>
-              item.pictureUrl !== null &&
-              item.pictureUrl !== answerOption.pictureUrl &&
-              answerOption.pictureUrl !== null,
-          ),
-        )
-        .map((answerOption) => answerOption.pictureUrl);
-      picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
-    }
+    await this.updatePollDeletePictureUrlAndFiles(
+      oldPoll,
+      postPollDto,
+      updateData.answerOptions,
+    );
 
     //update AnswerOptions
     const updateAnswerOptions = [];
@@ -533,5 +503,91 @@ export class PollsService {
 
       this.eventEmitter.emit(MailEvent.SEND_MAIL_POLL_ENDED_AUTHOR, poll.id);
     }
+  }
+
+  async updatePollDeleteAnswerOptions(
+    oldPoll: PollDto,
+    postPollDto: Partial<PostPollDto>,
+    answerOptions: AnswerOptionDto[],
+  ) {
+    if (
+      oldPoll.answerOptions.length !== 0 &&
+      postPollDto.answerType !== AnswerType.input
+    ) {
+      const arrayId = oldPoll.answerOptions
+        .filter((answerOption) =>
+          answerOptions.every((item) => answerOption.id !== item.id),
+        )
+        .map((answerOption) => answerOption.id);
+
+      await this.answerOptionService.deleteManyAnswerOption(arrayId);
+    } else {
+      const arrayId = oldPoll.answerOptions.map(
+        (answerOption) => answerOption.id,
+      );
+      await this.answerOptionService.deleteManyAnswerOption(arrayId);
+    }
+  }
+
+  async updatePollDeleteBackgroundUrlAndFile(
+    oldPoll: PollDto,
+    backgroundUrl: string,
+  ) {
+    if (oldPoll.backgroundUrl !== null) {
+      if (backgroundUrl === undefined) {
+        await this.prisma.poll.update({
+          where: { id: oldPoll.id },
+          data: {
+            backgroundUrl: null,
+          },
+        });
+      }
+      if (backgroundUrl !== oldPoll.backgroundUrl) {
+        this.filesService.deleteFile(oldPoll.backgroundUrl, 'images');
+      }
+    }
+  }
+
+  async updatePollDeletePictureUrlAndFiles(
+    oldPoll: PollDto,
+    postPollDto: Partial<PostPollDto>,
+    answerOptions: AnswerOptionDto[],
+  ) {
+    if (postPollDto.answerType !== AnswerType.input) {
+      const arrayId = answerOptions
+        .filter(
+          (answerOption) => answerOption.pictureUrl === null && answerOption.id,
+        )
+        .map((item) => item.id);
+      await this.answerOptionService.deletePictures(arrayId);
+
+      const picturesUrl = oldPoll.answerOptions
+        .filter((answerOption) =>
+          answerOptions.every(
+            (item) =>
+              item.pictureUrl !== null &&
+              item.pictureUrl !== answerOption.pictureUrl &&
+              answerOption.pictureUrl !== null,
+          ),
+        )
+        .map((answerOption) => answerOption.pictureUrl);
+      picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
+    }
+  }
+
+  deleteFilesIfThereIsAnError(images: {
+    pictures?: Express.Multer.File[];
+    background?: Express.Multer.File[];
+  }) {
+    if (images !== undefined) {
+      if (images.background !== undefined)
+        fs.unlink(images.background[0].path, (err) => err);
+      if (images.pictures !== undefined)
+        images.pictures.forEach((picture) => {
+          if (picture === undefined) return;
+          fs.unlink(picture.path, (err) => err);
+        });
+    }
+    return;
   }
 }
