@@ -43,6 +43,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PollAuthorGuard } from './poll-author.guard';
 import { PollDto } from './dto/poll.dto';
 import { SaveDraftPollDto } from './dto/post-draft-poll.dto';
+import { Request } from 'express';
+import { EditPollDto } from './dto/edit-poll.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -171,12 +173,9 @@ export class PollsController {
 
   @Get(':pollId')
   @UseGuards(VoteGuard)
-  async getPollById(
-    @User() user: UserDto,
-    @Param('pollId', ParseIntPipe) pollId: number,
-  ) {
+  async getPollById(@Param('pollId', ParseIntPipe) pollId: number) {
     try {
-      return await this.pollsService.getPollById(user, pollId);
+      return await this.pollsService.getPollById(pollId);
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }
@@ -305,6 +304,53 @@ export class PollsController {
       );
       return {
         message: MSG_SAVE_DRAFT_SUCCESSFUL,
+        poll: updatePoll,
+      };
+    } catch (error) {
+      this.pollsService.deleteFilesIfThereIsAnError(images);
+      throw new HttpException(error.response, error.status);
+    }
+  }
+
+  @Patch(':pollId/edit')
+  @UseGuards(PollAuthorGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: FieldName.PICTURES, maxCount: 10 },
+        { name: FieldName.BACKGROUND, maxCount: 1 },
+      ],
+      FilesService.multerOptions({
+        fileSize: 5,
+        folder: 'images',
+      }),
+    ),
+  )
+  async editPoll(
+    @Req() req: Request,
+    @Body() editPollDto: EditPollDto,
+    @UploadedFiles()
+    images: {
+      pictures?: Express.Multer.File[];
+      background?: Express.Multer.File[];
+    },
+  ) {
+    try {
+      const poll: PollDto = req['poll'];
+      if (poll.status !== PollStatus.pending) {
+        throw new BadRequestException(MSG_POLL_STATUS_MUST_PENDING);
+      }
+
+      this.pollsService.checkStartDateAndEndDate(poll, editPollDto);
+
+      const updatePoll = await this.pollsService.updatePoll(
+        poll,
+        editPollDto,
+        images.pictures,
+        images.background,
+      );
+      return {
+        message: MSG_SUCCESSFUL_POLL_CREATION,
         poll: updatePoll,
       };
     } catch (error) {

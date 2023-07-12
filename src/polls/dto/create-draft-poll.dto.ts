@@ -3,6 +3,7 @@ import { CreatePollDto } from './create-poll.dto';
 import {
   IsArray,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -18,6 +19,7 @@ export class CreateDraftPollDto extends PartialType(
   @ApiProperty()
   title: string;
 
+  @IsNumber({}, { each: true })
   @IsArray()
   @Transform((item) => item.value.map((v) => Number(v)))
   @IsOptional()

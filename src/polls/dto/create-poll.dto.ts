@@ -9,6 +9,7 @@ import {
   IsDate,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -60,6 +61,7 @@ export class CreatePollDto {
   @ApiProperty({ required: false, default: false })
   isPublic?: boolean = false;
 
+  @IsNumber({}, { each: true })
   @ArrayMinSize(1)
   @IsArray()
   @Transform((item) => item.value.map((v) => Number(v)))
