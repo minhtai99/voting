@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../users/dto/user.dto';
 import { PollDto } from './dto/poll.dto';
 import {
+  MSG_DELETE_POLL_SUCCESSFUL,
   MSG_END_DATE_GREATER_THAN_START_DATE,
   MSG_ERROR_IMAGE_INDEX,
   MSG_ERROR_SEND_MAIL_POLL,
@@ -148,7 +149,22 @@ export class PollsService {
     return new PollDto(updatedPoll);
   }
 
-  checkStartDateAndEndData(poll: Partial<PostPollDto>) {
+  async deletePoll(poll: PollDto) {
+    if (poll.backgroundUrl !== null) {
+      this.filesService.deleteFile(poll.backgroundUrl, 'images');
+    }
+    if (poll.answerOptions.length !== 0) {
+      const picturesUrl = poll.answerOptions.map(
+        (answerOption) => answerOption.pictureUrl,
+      );
+      picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
+    }
+    await this.prisma.poll.delete({ where: { id: poll.id } });
+
+    return { message: MSG_DELETE_POLL_SUCCESSFUL };
+  }
+
+  checkStartDateAndEndDateInCreatePoll(poll: Partial<PostPollDto>) {
     if (poll.startDate === undefined && poll.endDate !== undefined) {
       return {
         status: PollStatus.ongoing,
@@ -594,7 +610,7 @@ export class PollsService {
     return;
   }
 
-  checkStartDateAndEndDate(
+  checkStartDateAndEndDateInEditPoll(
     oldPoll: PollDto,
     editPollDto: Partial<PostPollDto>,
   ) {
