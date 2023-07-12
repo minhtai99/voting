@@ -5,9 +5,15 @@ import { UsersModule } from '../users/users.module';
 import { FilesModule } from '../files/files.module';
 import { PollSchedule } from './cron/poll.cron';
 import { AuthModule } from 'src/auth/auth.module';
+import { AnswerOptionModule } from 'src/answer-option/answer-option.module';
 
 @Module({
-  imports: [UsersModule, FilesModule, forwardRef(() => AuthModule)],
+  imports: [
+    UsersModule,
+    FilesModule,
+    forwardRef(() => AuthModule),
+    AnswerOptionModule,
+  ],
   controllers: [PollsController],
   providers: [PollsService, PollSchedule],
   exports: [PollsService, PollSchedule],

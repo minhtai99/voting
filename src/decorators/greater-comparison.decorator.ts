@@ -19,7 +19,9 @@ export function GreaterComparison<T>(
         validate(value: any, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = (args.object as any)[relatedPropertyName];
-          return value > relatedValue;
+          if (value !== undefined && relatedValue !== undefined)
+            return value > relatedValue;
+          return true;
         },
 
         defaultMessage(args: ValidationArguments) {

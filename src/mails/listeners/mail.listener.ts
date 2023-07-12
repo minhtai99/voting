@@ -26,9 +26,18 @@ export class MailListener {
   @OnEvent(MailEvent.SEND_MAIL_INVITATION_VOTE)
   async handleSendEmailInvitationVote(payload: MailInvitationVote) {
     try {
-      await this.mailService.sendEmailStartedPoll(
+      await this.mailService.sendEmailStartedPoll(payload.pollId);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  @OnEvent(MailEvent.SEND_MAIL_ADD_INVITATION_VOTE)
+  async handleSendEmailAddInvitationVote(payload: MailInvitationVote) {
+    try {
+      await this.mailService.sendEmailInvitePeople(
         payload.pollId,
-        payload.token,
+        payload.invitedUsers,
       );
     } catch (error) {
       this.logger.error(error);

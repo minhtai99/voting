@@ -7,6 +7,7 @@ import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { MailListener } from './listeners/mail.listener';
 import { FilesModule } from '../files/files.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Global()
 @Module({
@@ -36,6 +37,7 @@ import { FilesModule } from '../files/files.module';
     }),
     PollsModule,
     FilesModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [MailsService, MailListener],

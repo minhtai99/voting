@@ -7,7 +7,7 @@ export interface MailForgotPassPayload {
 
 export interface MailInvitationVote {
   pollId: number;
-  token: string;
+  invitedUsers?: number[];
 }
 
 export interface VoteExcel {

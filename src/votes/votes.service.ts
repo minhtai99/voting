@@ -1,7 +1,7 @@
 import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
-  MSG_POLL_STATUS_NOT_ONGOING,
+  MSG_POLL_STATUS_MUST_ONGOING,
   MSG_SUCCESSFUL_VOTE_CREATION,
   MSG_VOTE_NOT_FOUND,
 } from '../constants/message.constant';
@@ -23,7 +23,7 @@ export class VotesService {
   async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
     const poll: PollDto = req['poll'];
     if (poll.status !== PollStatus.ongoing) {
-      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
+      throw new BadRequestException(MSG_POLL_STATUS_MUST_ONGOING);
     }
     this.votingDataValidation(poll, createVoteDto);
 

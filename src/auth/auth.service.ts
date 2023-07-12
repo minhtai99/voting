@@ -13,7 +13,6 @@ import { compareHashedData } from '../helpers/hash.helper';
 import { TokenType } from './auth.enum';
 import {
   MSG_EMAIL_ALREADY_EXISTS,
-  MSG_EMAIL_NOT_EXISTED,
   MSG_ERROR_CREATE_TOKEN,
   MSG_INVALID_REFRESH_TOKEN,
   MSG_INVALID_TOKEN,
@@ -25,7 +24,7 @@ import {
   MSG_REGISTER_SUCCESSFUL,
   MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
-  MSG_WRONG_PASSWORD,
+  MSG_WRONG_LOGIN_INFORMATION,
 } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { MailEvent } from '../mails/mails.enum';
@@ -63,12 +62,12 @@ export class AuthService {
     const { email, password, isRemember } = loginAuthDto;
     const foundUser = await this.usersService.findUserByEmail(email);
     if (!foundUser) {
-      throw new BadRequestException(MSG_EMAIL_NOT_EXISTED);
+      throw new BadRequestException(MSG_WRONG_LOGIN_INFORMATION);
     }
 
     const isMatch = await compareHashedData(password, foundUser.password);
     if (!isMatch) {
-      throw new BadRequestException(MSG_WRONG_PASSWORD);
+      throw new BadRequestException(MSG_WRONG_LOGIN_INFORMATION);
     }
 
     const payload: JwtPayload = {

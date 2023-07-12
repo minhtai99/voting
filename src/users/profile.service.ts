@@ -1,16 +1,13 @@
+import { FilesService } from './../files/files.service';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
 import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly filesService: FilesService) {}
 
   deleteAvatarFile(user: UserDto) {
     if (!user.avatarUrl) return;
-    const destination = this.configService.get('UPLOADED_FILES_DESTINATION');
-    const avatarUrl = user.avatarUrl.slice(user.avatarUrl.indexOf('avatars'));
-    fs.unlink(`${destination}/${avatarUrl}`, (err) => err);
+    this.filesService.deleteFile(user.avatarUrl, 'avatars');
   }
 }

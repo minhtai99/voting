@@ -5,6 +5,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { fileConfig, fileFilter } from '../helpers/files.helper';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as excelJs from 'exceljs';
+import * as fs from 'fs';
 
 interface UploadFile {
   fileSize: number;
@@ -56,6 +57,14 @@ export class FilesService {
         cb(null, `${uuid()}-${originalname}`);
       },
     });
+  }
+
+  deleteFile(url: string, folder: string) {
+    if (url === null) return;
+    fs.unlink(
+      `${fileConfig.dest}/${url.slice(url.indexOf(folder))}`,
+      (err) => err,
+    );
   }
 
   getPictureUrlAndBackgroundUrl(
