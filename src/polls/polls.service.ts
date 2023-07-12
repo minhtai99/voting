@@ -177,17 +177,15 @@ export class PollsService {
   }
 
   checkStartDateAndEndData(poll: Partial<PostPollDto>) {
-    if (!poll.status) {
-      if (poll.startDate === undefined && poll.endDate !== undefined) {
-        return {
-          status: PollStatus.ongoing,
-          startDate: new Date(),
-        };
-      } else {
-        return {
-          status: PollStatus.pending,
-        };
-      }
+    if (poll.startDate === undefined && poll.endDate !== undefined) {
+      return {
+        status: PollStatus.ongoing,
+        startDate: new Date(),
+      };
+    } else {
+      return {
+        status: PollStatus.pending,
+      };
     }
   }
 
