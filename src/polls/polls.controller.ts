@@ -31,7 +31,7 @@ import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import {
   MSG_POLL_NOT_FOUND,
-  MSG_POLL_STATUS_MUST_DRAFT_OR_PENDING,
+  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_POLL_STATUS_MUST_ONGOING,
   MSG_POLL_STATUS_MUST_PENDING,
   MSG_SAVE_DRAFT_SUCCESSFUL,
@@ -366,12 +366,8 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   async deletePoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    if (
-      [PollStatus.ongoing, PollStatus.completed].some(
-        (status) => status === poll.status,
-      )
-    ) {
-      throw new BadRequestException(MSG_POLL_STATUS_MUST_DRAFT_OR_PENDING);
+    if (poll.status === PollStatus.ongoing) {
+      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
     }
     return await this.pollsService.deletePoll(poll);
   }
