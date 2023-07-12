@@ -12,6 +12,7 @@ export const MSG_SUCCESSFUL_POLL_CREATION = 'Posted successfully!';
 export const MSG_SAVE_DRAFT_SUCCESSFUL = 'Save draft successfully';
 export const MSG_DELETE_VOTE_SUCCESSFUL = 'Deleted vote successfully';
 export const MSG_SUCCESSFUL_VOTE_CREATION = 'Voted successfully!';
+export const MSG_DELETE_POLL_SUCCESSFUL = 'Deleted poll successfully';
 //////    Error message    //////
 export const MSG_TOKEN_DOES_NOT_MATCH = 'Token does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
@@ -47,3 +48,4 @@ export const MSG_START_DATE_LESS_THAN_END_DATE =
   'StartDate must be less than EndDate';
 export const MSG_END_DATE_GREATER_THAN_START_DATE =
   'EndDate must be greater than StartDate';
+export const MSG_POLL_STATUS_NOT_ONGOING = 'Poll Status must not be Ongoing';

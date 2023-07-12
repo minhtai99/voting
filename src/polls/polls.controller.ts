@@ -18,6 +18,7 @@ import {
   Patch,
   Req,
   BadRequestException,
+  Delete,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -30,10 +31,12 @@ import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import {
   MSG_POLL_NOT_FOUND,
+  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_POLL_STATUS_MUST_ONGOING,
   MSG_POLL_STATUS_MUST_PENDING,
   MSG_SAVE_DRAFT_SUCCESSFUL,
   MSG_SUCCESSFUL_POLL_CREATION,
+  MSG_UPDATE_SUCCESSFUL,
 } from '../constants/message.constant';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { PollStatus } from '@prisma/client';
@@ -80,9 +83,9 @@ export class PollsController {
   ) {
     try {
       const { status, startDate } =
-        this.pollsService.checkStartDateAndEndData(createPollDto);
+        this.pollsService.checkStartDateAndEndDateInCreatePoll(createPollDto);
       createPollDto.status = status;
-      createPollDto.startDate = startDate;
+      createPollDto.startDate = createPollDto.startDate ?? startDate;
 
       const poll = await this.pollsService.createPoll(
         user,
@@ -249,9 +252,9 @@ export class PollsController {
     try {
       const poll: PollDto = req['poll'];
       const { status, startDate } =
-        this.pollsService.checkStartDateAndEndData(postPollDto);
+        this.pollsService.checkStartDateAndEndDateInCreatePoll(postPollDto);
       postPollDto.status = status;
-      postPollDto.startDate = startDate;
+      postPollDto.startDate = postPollDto.startDate ?? startDate;
 
       const updatePoll = await this.pollsService.updatePoll(
         poll,
@@ -341,7 +344,7 @@ export class PollsController {
         throw new BadRequestException(MSG_POLL_STATUS_MUST_PENDING);
       }
 
-      this.pollsService.checkStartDateAndEndDate(poll, editPollDto);
+      this.pollsService.checkStartDateAndEndDateInEditPoll(poll, editPollDto);
 
       const updatePoll = await this.pollsService.updatePoll(
         poll,
@@ -350,12 +353,22 @@ export class PollsController {
         images.background,
       );
       return {
-        message: MSG_SUCCESSFUL_POLL_CREATION,
+        message: MSG_UPDATE_SUCCESSFUL,
         poll: updatePoll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);
       throw new HttpException(error.response, error.status);
     }
+  }
+
+  @Delete(':pollId')
+  @UseGuards(PollAuthorGuard)
+  async deletePoll(@Req() req: Request) {
+    const poll: PollDto = req['poll'];
+    if (poll.status === PollStatus.ongoing) {
+      throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
+    }
+    return await this.pollsService.deletePoll(poll);
   }
 }
