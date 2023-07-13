@@ -394,9 +394,7 @@ export class PollsController {
 
     const fileName = await this.filesService.exportDataToFile(poll.id);
     await new Promise(() =>
-      res.sendFile(fileName, {
-        root: path.join(__dirname, '../../'),
-      }),
+      res.download(path.join(__dirname, '../../', fileName), fileName),
     );
     this.filesService.deleteFile(fileName);
   }
