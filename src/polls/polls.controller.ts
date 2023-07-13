@@ -158,20 +158,28 @@ export class PollsController {
     @User() user: UserDto,
     @Body() filterPollDto: FilterPollDto,
   ) {
-    filterPollDto.where = {
-      ...this.pollsService.filterParticipantPoll(user.id),
-      ...filterPollDto.where,
-    };
-    return this.pollsService.getPollList(filterPollDto);
+    try {
+      filterPollDto.where = {
+        ...this.pollsService.filterParticipantPoll(user.id),
+        ...filterPollDto.where,
+      };
+      return this.pollsService.getPollList(filterPollDto);
+    } catch {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
   }
 
   @Post('my-polls')
   getMyPolls(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
-    filterPollDto.where = {
-      authorId: user.id,
-      ...filterPollDto.where,
-    };
-    return this.pollsService.getPollList(filterPollDto);
+    try {
+      filterPollDto.where = {
+        authorId: user.id,
+        ...filterPollDto.where,
+      };
+      return this.pollsService.getPollList(filterPollDto);
+    } catch {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
   }
 
   @Get(':pollId')

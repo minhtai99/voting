@@ -1,3 +1,4 @@
+import { PollDto } from 'src/polls/dto/poll.dto';
 import { MSG_VOTE_NOT_FOUND } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -16,6 +17,7 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { User } from '../decorators/user.decorator';
 import { VoteGuard } from './vote.guard';
 import { Request } from 'express';
+import { FilterVoteDto } from './dto/filter-vote.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vote')
@@ -43,6 +45,24 @@ export class VotesController {
   async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
       return this.votesService.findVoteByPollId(user, req);
+    } catch {
+      throw new NotFoundException(MSG_VOTE_NOT_FOUND);
+    }
+  }
+
+  @Post('get-votes-list')
+  @UseGuards(VoteGuard)
+  async getVotingList(
+    @Body() filterVoteDto: FilterVoteDto,
+    @Req() req: Request,
+  ) {
+    try {
+      const poll: PollDto = req['poll'];
+      filterVoteDto.where = {
+        pollId: poll.id,
+        ...filterVoteDto.where,
+      };
+      return this.votesService.getVotingList(filterVoteDto);
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }

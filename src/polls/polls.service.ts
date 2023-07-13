@@ -453,7 +453,7 @@ export class PollsService {
       },
       authorId: { not: userId },
       status: {
-        not: 'draft',
+        notIn: ['draft', 'pending'],
       },
     };
   }
