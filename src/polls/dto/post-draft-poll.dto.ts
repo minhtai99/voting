@@ -1,28 +1,10 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
-import { PostPollDto } from './post-poll.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+import { CreateDraftPollDto } from './create-draft-poll.dto';
 
-export class SaveDraftPollDto extends PartialType(
-  OmitType(PostPollDto, ['title', 'invitedUsers']),
-) {
-  @MaxLength(200)
+export class SaveDraftPollDto extends CreateDraftPollDto {
   @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  title: string;
-
-  @IsNumber({}, { each: true })
-  @IsArray()
-  @Transform((item) => item.value.map((v) => Number(v)))
   @IsOptional()
-  @ApiProperty({ required: false, type: [Number] })
-  invitedUsers?: number[] = [];
+  @ApiProperty({ required: false })
+  backgroundUrl?: string;
 }
