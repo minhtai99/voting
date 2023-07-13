@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AnswerOptionService } from './answer-option.service';
 import { FilesModule } from 'src/files/files.module';
 
 @Module({
-  imports: [FilesModule],
+  imports: [forwardRef(() => FilesModule)],
   providers: [AnswerOptionService],
   exports: [AnswerOptionService],
 })

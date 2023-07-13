@@ -5,8 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { UserDto } from '../users/dto/user.dto';
 import { AnswerType } from '@prisma/client';
 import { FilesService } from '../files/files.service';
-import { SummaryVoteExcel, VoteExcel } from './interfaces/send-mail.interface';
-import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class MailsService {
@@ -15,7 +13,6 @@ export class MailsService {
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
     private readonly filesService: FilesService,
-    private readonly usersService: UsersService,
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
@@ -138,44 +135,7 @@ export class MailsService {
       );
     }
 
-    const jsonVotes: (VoteExcel | SummaryVoteExcel)[] = [];
-    jsonVotes.push({
-      title: poll.title,
-      question: poll.question,
-      startTime: poll.startDate.toLocaleString(),
-      endTime: poll.endDate.toLocaleString(),
-      answerType: poll.answerType,
-    });
-    if (poll.answerType === AnswerType.checkbox) {
-      poll.votes.map((vote) => {
-        jsonVotes.push({
-          email: vote.participant.email,
-          name: vote.participant.firstName + ' ' + vote.participant.lastName,
-          time: vote.updatedAt.toLocaleString(),
-          answer: vote.answers
-            .map((answer, index) => `${index + 1}. ${answer.content}`)
-            .toString()
-            .replace(/,+/g, '\n'),
-        });
-      });
-    } else {
-      poll.votes.map((vote) => {
-        jsonVotes.push({
-          email: vote.participant.email,
-          name: vote.participant.firstName + ' ' + vote.participant.lastName,
-          time: vote.updatedAt.toLocaleString(),
-          answer:
-            poll.answerType === AnswerType.input
-              ? vote.input
-              : vote.answers[0].content,
-        });
-      });
-    }
-
-    const excelFile = await this.filesService.convertJsonToExcel(
-      `${poll.id}_poll_result`,
-      jsonVotes,
-    );
+    const excelFile = await this.filesService.exportDataToBuffer(pollId);
 
     await this.mailerService.sendMail({
       to: poll.author.email,

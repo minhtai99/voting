@@ -1,11 +1,24 @@
+import { PollsService } from './../polls/polls.service';
+import {
+  SummaryVoteExcel,
+  VoteExcel,
+} from './../mails/interfaces/send-mail.interface';
 import { diskStorage } from 'multer';
 import { v4 as uuid } from 'uuid';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
 import { fileConfig, fileFilter } from '../helpers/files.helper';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as excelJs from 'exceljs';
 import * as fs from 'fs';
+import { AnswerType } from '@prisma/client';
+import path from 'path';
 
 interface UploadFile {
   fileSize: number;
@@ -14,6 +27,10 @@ interface UploadFile {
 
 @Injectable()
 export class FilesService {
+  constructor(
+    @Inject(forwardRef(() => PollsService))
+    private readonly pollsService: PollsService,
+  ) {}
   private readonly logger = new Logger(FilesService.name);
 
   static multerOptions(file: UploadFile): MulterOptions {
@@ -59,12 +76,16 @@ export class FilesService {
     });
   }
 
-  deleteFile(url: string, folder: string) {
+  deleteFile(url: string, folder?: string) {
     if (url === null) return;
-    fs.unlink(
-      `${fileConfig.dest}/${url.slice(url.indexOf(folder))}`,
-      (err) => err,
-    );
+    if (folder !== undefined) {
+      fs.unlink(
+        `${fileConfig.dest}/${url.slice(url.indexOf(folder))}`,
+        (err) => err,
+      );
+    } else {
+      fs.unlink(`./dist/${url}`, (err) => err);
+    }
   }
 
   getPictureUrlAndBackgroundUrl(
@@ -232,5 +253,52 @@ export class FilesService {
     } catch (error) {
       this.logger.error('Failed to prepare Report Data: ' + error);
     }
+  }
+
+  async exportDataToBuffer(pollId: number) {
+    const poll = await this.pollsService.findPollById(pollId);
+    const jsonVotes: (VoteExcel | SummaryVoteExcel)[] = [];
+    jsonVotes.push({
+      title: poll.title,
+      question: poll.question,
+      startTime: poll.startDate.toLocaleString(),
+      endTime: poll.endDate.toLocaleString(),
+      answerType: poll.answerType,
+    });
+    if (poll.answerType === AnswerType.checkbox) {
+      poll.votes.map((vote) => {
+        jsonVotes.push({
+          email: vote.participant.email,
+          name: vote.participant.firstName + ' ' + vote.participant.lastName,
+          time: vote.updatedAt.toLocaleString(),
+          answer: vote.answers
+            .map((answer, index) => `${index + 1}. ${answer.content}`)
+            .toString()
+            .replace(/,+/g, '\n'),
+        });
+      });
+    } else {
+      poll.votes.map((vote) => {
+        jsonVotes.push({
+          email: vote.participant.email,
+          name: vote.participant.firstName + ' ' + vote.participant.lastName,
+          time: vote.updatedAt.toLocaleString(),
+          answer:
+            poll.answerType === AnswerType.input
+              ? vote.input
+              : vote.answers[0].content,
+        });
+      });
+    }
+    return await this.convertJsonToExcel(`${poll.id}_poll_result`, jsonVotes);
+  }
+
+  async exportDataToFile(pollId: number) {
+    const excelFile = await this.exportDataToBuffer(pollId);
+    fs.writeFileSync(
+      path.join(__dirname, '../../', excelFile.filename),
+      Buffer.from(excelFile.data),
+    );
+    return excelFile.filename;
   }
 }

@@ -49,3 +49,4 @@ export const MSG_START_DATE_LESS_THAN_END_DATE =
 export const MSG_END_DATE_GREATER_THAN_START_DATE =
   'EndDate must be greater than StartDate';
 export const MSG_POLL_STATUS_NOT_ONGOING = 'Poll Status must not be Ongoing';
+export const MSG_POLL_STATUS_MUST_COMPLETED = 'Poll Status must be Completed';

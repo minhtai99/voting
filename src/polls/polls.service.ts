@@ -5,6 +5,8 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../users/dto/user.dto';
@@ -40,6 +42,7 @@ export class PollsService {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly answerOptionService: AnswerOptionService,
+    @Inject(forwardRef(() => FilesService))
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
   ) {}

@@ -19,6 +19,7 @@ import {
   Req,
   BadRequestException,
   Delete,
+  Res,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -31,9 +32,10 @@ import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
 import {
   MSG_POLL_NOT_FOUND,
-  MSG_POLL_STATUS_NOT_ONGOING,
+  MSG_POLL_STATUS_MUST_COMPLETED,
   MSG_POLL_STATUS_MUST_ONGOING,
   MSG_POLL_STATUS_MUST_PENDING,
+  MSG_POLL_STATUS_NOT_ONGOING,
   MSG_SAVE_DRAFT_SUCCESSFUL,
   MSG_SUCCESSFUL_POLL_CREATION,
   MSG_UPDATE_SUCCESSFUL,
@@ -46,8 +48,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PollAuthorGuard } from './poll-author.guard';
 import { PollDto } from './dto/poll.dto';
 import { SaveDraftPollDto } from './dto/post-draft-poll.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { EditPollDto } from './dto/edit-poll.dto';
+import path from 'path';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -56,6 +59,7 @@ export class PollsController {
   constructor(
     private readonly pollsService: PollsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly filesService: FilesService,
   ) {}
 
   @Post()
@@ -378,5 +382,22 @@ export class PollsController {
       throw new BadRequestException(MSG_POLL_STATUS_NOT_ONGOING);
     }
     return await this.pollsService.deletePoll(poll);
+  }
+
+  @Get(':pollId/export-file')
+  @UseGuards(PollAuthorGuard)
+  async exportDataToFile(@Req() req: Request, @Res() res: Response) {
+    const poll: PollDto = req['poll'];
+    if (poll.status !== PollStatus.completed) {
+      throw new BadRequestException(MSG_POLL_STATUS_MUST_COMPLETED);
+    }
+
+    const fileName = await this.filesService.exportDataToFile(poll.id);
+    await new Promise(() =>
+      res.sendFile(fileName, {
+        root: path.join(__dirname, '../../'),
+      }),
+    );
+    this.filesService.deleteFile(fileName);
   }
 }
