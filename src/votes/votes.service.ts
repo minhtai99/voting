@@ -13,6 +13,7 @@ import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
+import { FilterVoteDto } from './dto/filter-vote.dto';
 @Injectable()
 export class VotesService {
   constructor(
@@ -63,6 +64,38 @@ export class VotesService {
   async findVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
     return this.pollsService.findVoteByPollId(user, poll.id);
+  }
+
+  async getVotingList(filterVoteDto: FilterVoteDto) {
+    const page = filterVoteDto.page || 1;
+    const size = filterVoteDto.size || 10;
+    const where = filterVoteDto.where;
+    const select = filterVoteDto.select;
+    const orderBy = filterVoteDto.orderBy;
+
+    const skip = (page - 1) * size;
+
+    const total = await this.prisma.vote.count({
+      where,
+    });
+
+    const votes = await this.prisma.vote.findMany({
+      where,
+      select,
+      skip,
+      take: size,
+      orderBy,
+    });
+    const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
+    const prevPage = page - 1 < 1 ? null : page - 1;
+
+    return {
+      total: total,
+      currentPage: page,
+      nextPage,
+      prevPage,
+      votes: votes.map((vote) => new VoteDto(vote)),
+    };
   }
 
   // async deleteVote(user: UserDto, req: Request) {
