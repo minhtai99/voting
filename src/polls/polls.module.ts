@@ -9,8 +9,8 @@ import { AnswerOptionModule } from 'src/answer-option/answer-option.module';
 
 @Module({
   imports: [
-    UsersModule,
-    FilesModule,
+    forwardRef(() => UsersModule),
+    forwardRef(() => FilesModule),
     forwardRef(() => AuthModule),
     AnswerOptionModule,
   ],

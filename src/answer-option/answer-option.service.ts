@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, forwardRef, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../files/files.service';
 import { AnswerOptionDto } from './dto/answer-option.dto';
@@ -7,6 +7,7 @@ import { AnswerOptionDto } from './dto/answer-option.dto';
 export class AnswerOptionService {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => FilesService))
     private readonly filesService: FilesService,
   ) {}
 
