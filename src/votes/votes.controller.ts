@@ -7,6 +7,8 @@ import {
   Controller,
   Delete,
   NotFoundException,
+  Param,
+  ParseIntPipe,
   Post,
   Req,
   UseGuards,
@@ -50,16 +52,15 @@ export class VotesController {
     }
   }
 
-  @Post('get-votes-list')
+  @Post(':pollId/search')
   @UseGuards(VoteGuard)
   async getVotingList(
     @Body() filterVoteDto: FilterVoteDto,
-    @Req() req: Request,
+    @Param('pollId', ParseIntPipe) pollId: number,
   ) {
     try {
-      const poll: PollDto = req['poll'];
       filterVoteDto.where = {
-        pollId: poll.id,
+        pollId,
         ...filterVoteDto.where,
       };
       return this.votesService.getVotingList(filterVoteDto);
