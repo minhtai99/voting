@@ -10,6 +10,7 @@ export class RequestAnswerOption {
   id?: number;
 
   @IsString()
+  @Transform(({ value }) => value.trim().replace(/ +/g, ' '))
   @IsNotEmpty()
   @ApiProperty()
   content: string;

@@ -15,6 +15,7 @@ export class CreateDraftPollDto extends PartialType(
 ) {
   @MaxLength(200)
   @IsString()
+  @Transform(({ value }) => value.trim().replace(/ +/g, ' '))
   @IsNotEmpty()
   @ApiProperty()
   title: string;
