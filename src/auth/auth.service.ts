@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -23,12 +24,14 @@ import {
   MSG_SENT_MAIL_FORGOT_PASSWORD,
   MSG_USER_NOT_FOUND,
   MSG_WRONG_LOGIN_INFORMATION,
+  MSG_REFRESH_TOKEN_DOES_NOT_MATCH,
 } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { MailEvent } from '../mails/mails.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResetPassDto } from './dto/reset-password.dto';
 import { MailForgotPassPayload } from '../mails/interfaces/send-mail.interface';
+import { Request } from 'express';
 
 interface JwtPayload {
   id?: number;
@@ -97,15 +100,38 @@ export class AuthService {
     return { message: MSG_LOGOUT_SUCCESSFUL };
   }
 
-  async refreshToken(user: UserDto) {
+  async refreshToken(req: Request) {
+    const [type, refreshToken] = req.headers.authorization?.split(' ') ?? [];
+    if (type !== 'Bearer') {
+      throw new UnauthorizedException(MSG_INVALID_TOKEN);
+    }
+
+    const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
+
+    const foundUser = await this.usersService.findUserByEmail(payload.email);
+    if (!foundUser) {
+      throw new NotFoundException(MSG_USER_NOT_FOUND);
+    }
+
+    const isMatch = await compareHashedData(
+      refreshToken.slice(refreshToken.lastIndexOf('.')),
+      foundUser.refreshTokenHash,
+    );
+    if (!isMatch) {
+      throw new BadRequestException(MSG_REFRESH_TOKEN_DOES_NOT_MATCH);
+    }
+
     const jwtPayload: JwtPayload = {
-      id: user.id,
-      email: user.email,
+      id: foundUser.id,
+      email: foundUser.email,
     };
     const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
     const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
 
-    await this.usersService.updateRefreshTokenHash(user.id, newRefreshToken);
+    await this.usersService.updateRefreshTokenHash(
+      foundUser.id,
+      newRefreshToken,
+    );
 
     return {
       message: MSG_REFRESH_TOKEN_SUCCESSFUL,

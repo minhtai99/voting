@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -8,7 +8,7 @@ import { User } from '../decorators/user.decorator';
 import { JwtAuthGuard } from './jwt.guard';
 import { ForgotPassDto } from './dto/forgot-password.dto';
 import { ResetPassDto } from './dto/reset-password.dto';
-import { RefreshJwtAuthGuard } from './refresh-jwt.guard';
+import { Request } from 'express';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -31,10 +31,9 @@ export class AuthController {
     return this.authService.logout(user);
   }
 
-  @UseGuards(RefreshJwtAuthGuard)
   @Post('refresh')
-  async refreshTokens(@User() user: UserDto) {
-    return this.authService.refreshToken(user);
+  async refreshTokens(@Req() req: Request) {
+    return this.authService.refreshToken(req);
   }
 
   @Post('forgot-password')
