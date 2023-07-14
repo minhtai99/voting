@@ -16,7 +16,7 @@ export const MSG_DELETE_POLL_SUCCESSFUL = 'Deleted poll successfully';
 //////    Error message    //////
 export const MSG_TOKEN_DOES_NOT_MATCH = 'Token does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
-export const MSG_INVALID_REFRESH_TOKEN = 'Invalid refresh token';
+export const MSG_REFRESH_TOKEN_DOES_NOT_MATCH = 'Refresh Token does not match';
 export const MSG_ERROR_CREATE_TOKEN = 'Token generation error';
 export const MSG_EMPTY_HASH_DATA = 'Empty hash data';
 export const MSG_EMPTY_COMPARE_DATA = 'Empty compare data';

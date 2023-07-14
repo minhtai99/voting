@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
-import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { compareHashedData } from '../helpers/hash.helper';
@@ -14,7 +13,6 @@ import { TokenType } from './auth.enum';
 import {
   MSG_EMAIL_ALREADY_EXISTS,
   MSG_ERROR_CREATE_TOKEN,
-  MSG_INVALID_REFRESH_TOKEN,
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
@@ -58,7 +56,7 @@ export class AuthService {
     };
   }
 
-  async login(loginAuthDto: LoginAuthDto, req: Request) {
+  async login(loginAuthDto: LoginAuthDto) {
     const { email, password, isRemember } = loginAuthDto;
     const foundUser = await this.usersService.findUserByEmail(email);
     if (!foundUser) {
@@ -76,67 +74,43 @@ export class AuthService {
     };
 
     const accessToken = this.createJWT(payload, TokenType.ACCESS);
+    let refreshToken: string = null;
     if (isRemember) {
-      const refreshToken = this.createJWT(payload, TokenType.REFRESH);
+      refreshToken = this.createJWT(payload, TokenType.REFRESH);
       await this.usersService.updateRefreshTokenHash(
         foundUser.id,
         refreshToken,
       );
-      this.setCookie('RefreshToken', refreshToken, req);
     }
 
     return {
       message: MSG_LOGIN_SUCCESSFUL,
       AccessToken: accessToken,
+      RefreshToken: refreshToken,
       user: new UserDto(foundUser),
     };
   }
 
-  async logout(user: UserDto, req: Request) {
+  async logout(user: UserDto) {
     await this.usersService.updateRefreshTokenHash(user.id);
 
-    req.res.clearCookie('RefreshToken');
     return { message: MSG_LOGOUT_SUCCESSFUL };
   }
 
-  async refreshToken(req: Request) {
-    if (!req.cookies.RefreshToken) {
-      throw new BadRequestException(MSG_INVALID_REFRESH_TOKEN);
-    }
-    const refreshToken = req.cookies.RefreshToken;
-
-    const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
-
-    const foundUser = await this.usersService.findUserByEmail(payload.email);
-    if (!foundUser) {
-      throw new NotFoundException(MSG_USER_NOT_FOUND);
-    }
-
-    const isMatch = await compareHashedData(
-      refreshToken.slice(refreshToken.lastIndexOf('.')),
-      foundUser.refreshTokenHash,
-    );
-    if (!isMatch) {
-      throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
-    }
-
+  async refreshToken(user: UserDto) {
     const jwtPayload: JwtPayload = {
-      id: foundUser.id,
-      email: foundUser.email,
+      id: user.id,
+      email: user.email,
     };
     const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
     const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
 
-    await this.usersService.updateRefreshTokenHash(
-      foundUser.id,
-      newRefreshToken,
-    );
+    await this.usersService.updateRefreshTokenHash(user.id, newRefreshToken);
 
-    this.setCookie('RefreshToken', newRefreshToken, req);
     return {
       message: MSG_REFRESH_TOKEN_SUCCESSFUL,
       AccessToken: newAccessToken,
-      user: new UserDto(foundUser),
+      RefreshToken: newRefreshToken,
     };
   }
 
@@ -212,11 +186,11 @@ export class AuthService {
     }
   }
 
-  setCookie(key: string, value: string, req: Request) {
-    const frontendDomain = this.configService.get('FRONTEND_DOMAIN');
-    req.res.cookie(key, value, {
-      httpOnly: true,
-      domain: frontendDomain,
-    });
-  }
+  // setCookie(key: string, value: string, req: Request) {
+  //   const frontendDomain = this.configService.get('FRONTEND_DOMAIN');
+  //   req.res.cookie(key, value, {
+  //     httpOnly: true,
+  //     domain: frontendDomain,
+  //   });
+  // }
 }
