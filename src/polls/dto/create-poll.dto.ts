@@ -25,12 +25,14 @@ export class CreatePollDto {
 
   @MaxLength(200)
   @IsString()
+  @Transform(({ value }) => value.trim().replace(/ +/g, ' '))
   @IsNotEmpty()
   @ApiProperty()
   title: string;
 
   @MaxLength(1000)
   @IsString()
+  @Transform(({ value }) => value.trim().replace(/ +/g, ' '))
   @IsNotEmpty()
   @ApiProperty()
   question: string;

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsJWT,
   IsNotEmpty,
@@ -23,6 +24,7 @@ export class ResetPassDto {
   )
   @MinLength(5)
   @IsString()
+  @Transform(({ value }) => value.replace(/ +/g, ''))
   @ApiProperty()
   newPassword: string;
 
