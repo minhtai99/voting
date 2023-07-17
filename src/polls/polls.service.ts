@@ -26,7 +26,6 @@ import { UsersService } from '../users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
 import * as fs from 'fs';
-import { ConfigService } from '@nestjs/config';
 import { TokenType } from 'src/auth/auth.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
@@ -39,7 +38,6 @@ export class PollsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
-    private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly answerOptionService: AnswerOptionService,
     @Inject(forwardRef(() => FilesService))
@@ -94,7 +92,7 @@ export class PollsService {
     const updateData = await this.getPrismaPollData(
       postPollDto,
       picturesUrl,
-      backgroundUrl,
+      this.checkBackgroundUrl(postPollDto.backgroundUrl, backgroundUrl),
     );
 
     // delete AnswerOptions
@@ -168,7 +166,7 @@ export class PollsService {
   }
 
   checkStartDateAndEndDateInCreatePoll(poll: Partial<PostPollDto>) {
-    if (poll.startDate === undefined && poll.endDate !== undefined) {
+    if (poll.startDate === undefined) {
       return {
         status: PollStatus.ongoing,
         startDate: new Date(),
@@ -176,6 +174,7 @@ export class PollsService {
     } else {
       return {
         status: PollStatus.pending,
+        startDate: poll.startDate,
       };
     }
   }
@@ -308,7 +307,7 @@ export class PollsService {
       title: pollDto.title,
       question: pollDto.question,
       answerType: pollDto.answerType,
-      backgroundUrl: pollDto.backgroundUrl ?? backgroundUrl,
+      backgroundUrl: backgroundUrl?.replace(/\\+/g, '\\'),
       startDate: pollDto.startDate,
       endDate: pollDto.endDate,
       isPublic: pollDto.isPublic,
@@ -347,27 +346,16 @@ export class PollsService {
       );
     } else {
       if (picturesUrl.length !== 0) {
-        const destination = this.configService.get(
-          'UPLOADED_FILES_DESTINATION',
-        );
         picturesUrl.forEach((url) => {
-          fs.unlink(
-            `${destination}/${url.slice(url.indexOf('images'))}`,
-            (err) => err,
-          );
+          this.filesService.deleteFile(url, 'images');
         });
-
         if (backgroundUrl) {
-          fs.unlink(
-            `${destination}/${backgroundUrl.slice(
-              backgroundUrl.indexOf('images'),
-            )}`,
-            (err) => err,
-          );
+          this.filesService.deleteFile(backgroundUrl, 'images');
         }
         throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
       }
     }
+
     if (pollDto.isPublic === true) {
       const users = await this.usersService.getAllUsers();
       invitedUsers = users.map((user) => {
@@ -378,6 +366,7 @@ export class PollsService {
         return { id: userId };
       });
     }
+
     return {
       payload,
       answerOptions,
@@ -420,7 +409,7 @@ export class PollsService {
           {
             startDate: {
               gte: new Date(current.getTime() - 60000 * 6), // current - 6m
-              lte: new Date(current.getTime()),
+              lte: current,
             },
             status: 'pending',
           },
@@ -489,7 +478,7 @@ export class PollsService {
       where: { id: poll.id },
       data: {
         answer: {
-          connect: maxVoteArr.map((answerOption) => ({ id: answerOption.id })),
+          set: maxVoteArr.map((answerOption) => ({ id: answerOption.id })),
         },
       },
     };
@@ -527,10 +516,17 @@ export class PollsService {
     }
   }
 
+  checkBackgroundUrl(oldBackground: string, newBackground: string) {
+    if (newBackground) {
+      if (oldBackground) this.filesService.deleteFile(oldBackground, 'images');
+      return newBackground;
+    } else return oldBackground;
+  }
+
   async updatePollDeleteAnswerOptions(
     oldPoll: PollDto,
     postPollDto: Partial<PostPollDto>,
-    answerOptions: AnswerOptionDto[],
+    newAnswerOptions: AnswerOptionDto[],
   ) {
     if (
       oldPoll.answerOptions.length !== 0 &&
@@ -538,7 +534,7 @@ export class PollsService {
     ) {
       const arrayId = oldPoll.answerOptions
         .filter((answerOption) =>
-          answerOptions.every((item) => answerOption.id !== item.id),
+          newAnswerOptions.every((item) => answerOption.id !== item.id),
         )
         .map((answerOption) => answerOption.id);
 
@@ -553,30 +549,29 @@ export class PollsService {
 
   async updatePollDeleteBackgroundUrlAndFile(
     oldPoll: PollDto,
-    backgroundUrl: string,
+    newBackgroundUrl: string,
   ) {
-    if (oldPoll.backgroundUrl !== null) {
-      if (backgroundUrl === undefined) {
-        await this.prisma.poll.update({
-          where: { id: oldPoll.id },
-          data: {
-            backgroundUrl: null,
-          },
-        });
-      }
-      if (backgroundUrl !== oldPoll.backgroundUrl) {
-        this.filesService.deleteFile(oldPoll.backgroundUrl, 'images');
-      }
+    if (oldPoll.backgroundUrl === null) return;
+    if (newBackgroundUrl === undefined) {
+      await this.prisma.poll.update({
+        where: { id: oldPoll.id },
+        data: {
+          backgroundUrl: null,
+        },
+      });
+    }
+    if (newBackgroundUrl !== oldPoll.backgroundUrl) {
+      this.filesService.deleteFile(oldPoll.backgroundUrl, 'images');
     }
   }
 
   async updatePollDeletePictureUrlAndFiles(
     oldPoll: PollDto,
     postPollDto: Partial<PostPollDto>,
-    answerOptions: AnswerOptionDto[],
+    newAnswerOptions: AnswerOptionDto[],
   ) {
     if (postPollDto.answerType !== AnswerType.input) {
-      const arrayId = answerOptions
+      const arrayId = newAnswerOptions
         .filter(
           (answerOption) => answerOption.pictureUrl === null && answerOption.id,
         )
@@ -585,7 +580,7 @@ export class PollsService {
 
       const picturesUrl = oldPoll.answerOptions
         .filter((answerOption) =>
-          answerOptions.every(
+          newAnswerOptions.every(
             (item) =>
               item.pictureUrl !== null &&
               item.pictureUrl !== answerOption.pictureUrl &&
@@ -594,6 +589,11 @@ export class PollsService {
         )
         .map((answerOption) => answerOption.pictureUrl);
       picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
+    } else {
+      const picturesUrl = oldPoll.answerOptions.map(
+        (answerOption) => answerOption.pictureUrl,
+      );
+      picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
     }
   }
 
@@ -601,38 +601,32 @@ export class PollsService {
     pictures?: Express.Multer.File[];
     background?: Express.Multer.File[];
   }) {
-    if (images !== undefined) {
-      if (images.background !== undefined)
-        fs.unlink(images.background[0].path, (err) => err);
-      if (images.pictures !== undefined)
-        images.pictures.forEach((picture) => {
-          if (picture === undefined) return;
-          fs.unlink(picture.path, (err) => err);
-        });
-    }
-    return;
+    if (images === undefined) return;
+    if (images.background !== undefined)
+      fs.unlink(images.background[0].path, (err) => err);
+    if (images.pictures !== undefined)
+      images.pictures.forEach((picture) => {
+        if (picture === undefined) return;
+        fs.unlink(picture.path, (err) => err);
+      });
   }
 
   checkStartDateAndEndDateInEditPoll(
     oldPoll: PollDto,
     editPollDto: Partial<PostPollDto>,
   ) {
-    if (editPollDto.endDate && editPollDto.startDate === undefined) {
+    if (editPollDto.endDate || editPollDto.startDate === undefined) {
       if (
-        !(
-          new Date(editPollDto.endDate).valueOf() >
-          new Date(oldPoll.startDate).valueOf()
-        )
+        new Date(editPollDto.endDate).valueOf() <
+        new Date(oldPoll.startDate).valueOf()
       ) {
         throw new BadRequestException(MSG_END_DATE_GREATER_THAN_START_DATE);
       }
     }
-    if (editPollDto.startDate && editPollDto.endDate === undefined) {
+    if (editPollDto.endDate === undefined && editPollDto.startDate) {
       if (
-        !(
-          new Date(oldPoll.endDate).valueOf() >
-          new Date(editPollDto.startDate).valueOf()
-        )
+        new Date(oldPoll.endDate).valueOf() <
+        new Date(editPollDto.startDate).valueOf()
       ) {
         throw new BadRequestException(MSG_START_DATE_LESS_THAN_END_DATE);
       }

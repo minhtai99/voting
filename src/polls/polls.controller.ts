@@ -89,7 +89,7 @@ export class PollsController {
       const { status, startDate } =
         this.pollsService.checkStartDateAndEndDateInCreatePoll(createPollDto);
       createPollDto.status = status;
-      createPollDto.startDate = createPollDto.startDate ?? startDate;
+      createPollDto.startDate = startDate;
 
       const poll = await this.pollsService.createPoll(
         user,
@@ -266,7 +266,7 @@ export class PollsController {
       const { status, startDate } =
         this.pollsService.checkStartDateAndEndDateInCreatePoll(postPollDto);
       postPollDto.status = status;
-      postPollDto.startDate = postPollDto.startDate ?? startDate;
+      postPollDto.startDate = startDate;
 
       const updatePoll = await this.pollsService.updatePoll(
         poll,

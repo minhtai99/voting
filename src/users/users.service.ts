@@ -56,47 +56,40 @@ export class UsersService {
   }
 
   async updateRefreshTokenHash(userId: number, refreshToken?: string | null) {
-    const refreshTokenSlice = refreshToken
-      ? refreshToken.slice(refreshToken.lastIndexOf('.'))
-      : null;
-    const refreshTokenHash = refreshTokenSlice
-      ? await hashData(refreshTokenSlice)
-      : null;
     await this.prisma.user.update({
       where: {
         id: userId,
       },
       data: {
-        refreshTokenHash,
+        refreshTokenHash: await this.hashToken(refreshToken),
       },
     });
   }
 
   async updateResetPasswordHash(userId: number, resetPass?: string | null) {
-    const resetPasswordSlice = resetPass
-      ? resetPass.slice(resetPass.lastIndexOf('.'))
-      : null;
-    const resetPasswordHash = resetPasswordSlice
-      ? await hashData(resetPasswordSlice)
-      : null;
     await this.prisma.user.update({
       where: {
         id: userId,
       },
       data: {
-        resetPasswordHash,
+        resetPasswordHash: await this.hashToken(resetPass),
       },
     });
   }
 
+  async hashToken(token?: string | null) {
+    const tokenSlice = token ? token.slice(token.lastIndexOf('.')) : null;
+    const tokenHashed = tokenSlice ? await hashData(tokenSlice) : null;
+    return tokenHashed;
+  }
+
   async updatePassword(userId: number, newPassword: string) {
-    const hashedPass = await hashData(newPassword);
     await this.prisma.user.update({
       where: {
         id: userId,
       },
       data: {
-        password: hashedPass,
+        password: await hashData(newPassword),
         resetPasswordHash: null,
       },
     });
@@ -120,20 +113,18 @@ export class UsersService {
   }
 
   async findUserById(userId: number) {
-    const foundUser = await this.prisma.user.findUnique({
+    return await this.prisma.user.findUnique({
       where: {
         id: userId,
       },
     });
-    return foundUser;
   }
 
   async findUserByEmail(email: string) {
-    const foundUser = await this.prisma.user.findUnique({
+    return await this.prisma.user.findUnique({
       where: {
         email,
       },
     });
-    return foundUser;
   }
 }
