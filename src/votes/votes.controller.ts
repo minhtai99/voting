@@ -1,4 +1,3 @@
-import { PollDto } from 'src/polls/dto/poll.dto';
 import { MSG_VOTE_NOT_FOUND } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';

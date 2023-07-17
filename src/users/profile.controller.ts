@@ -1,5 +1,4 @@
 import { fileConfig } from './../helpers/files.helper';
-import { ConfigService } from '@nestjs/config';
 import { ChangePassDto } from './dto/change-password.dto';
 import {
   Body,
@@ -17,7 +16,6 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { UserDto } from './dto/user.dto';
 import { User } from '../decorators/user.decorator';
 import { UsersService } from './users.service';
-import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { FieldName } from '../files/files.enum';
@@ -31,7 +29,7 @@ export class ProfileController {
   constructor(
     private readonly usersService: UsersService,
     private readonly profileService: ProfileService,
-    private readonly configService: ConfigService,
+    private readonly filesService: FilesService,
   ) {}
 
   @Get()
@@ -69,7 +67,7 @@ export class ProfileController {
       this.profileService.deleteAvatarFile(user);
       return userUpdated;
     } catch {
-      fs.unlink(avatar.path, (err) => err);
+      this.filesService.deleteFile(avatar.path, 'avatars');
       throw new InternalServerErrorException(MSG_FILE_UPLOAD_FAILED);
     }
   }
