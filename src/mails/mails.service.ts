@@ -35,7 +35,6 @@ export class MailsService {
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
       poll.token
     }`;
-
     Promise.all(
       poll.invitedUsers.map(
         async (receiver) =>
@@ -81,26 +80,16 @@ export class MailsService {
 
   async sendEmailPollEndedParticipants(pollId: number) {
     const poll = await this.pollsService.findPollById(pollId);
-    const pollResult: string[] = [];
-    poll.answerOptions.sort((a, b) => b._count.votes - a._count.votes);
-    for (const answerOption of poll.answerOptions) {
-      pollResult.push(
-        `${answerOption.content} - ${answerOption._count.votes} votes`,
-      );
-    }
 
     Promise.all(
       poll.votes.map(async (vote) => {
-        let participantAnswer: string;
-        if (poll.answerType !== AnswerType.input) {
-          participantAnswer = poll.answerOptions
-            .map((answerOption) => {
-              return answerOption.content;
-            })
-            .toString()
-            .replace(/,+/g, ', ');
+        let participantAnswer: string[] | string;
+        if (poll.answerType === AnswerType.checkbox) {
+          participantAnswer = vote.answers.map((answerOption) => {
+            return answerOption.content;
+          });
         } else {
-          participantAnswer = vote.input;
+          participantAnswer = vote.input ?? vote.answers[0].content;
         }
 
         await this.mailerService.sendMail({
@@ -112,13 +101,13 @@ export class MailsService {
             receiver:
               vote.participant.firstName + ' ' + vote.participant.lastName,
             author: poll.author.firstName + ' ' + poll.author.lastName,
+            isArrayAnswer:
+              poll.answerType === AnswerType.checkbox ? true : false,
             participantAnswer,
-            htmlPollResult:
-              poll.answerType !== AnswerType.input ? 'Poll Result:' : null,
-            pollResult:
-              pollResult.length !== 0
-                ? pollResult.toString().replace(/,+/g, '\n')
-                : null,
+            isPollResult: poll.answerType === AnswerType.input ? false : true,
+            answerOptions: poll.answerOptions.sort(
+              (a, b) => b._count.votes - a._count.votes,
+            ),
           },
         });
       }),
@@ -127,13 +116,6 @@ export class MailsService {
 
   async sendEmailPollEndedAuthor(pollId: number) {
     const poll = await this.pollsService.findPollById(pollId);
-    const pollResult: string[] = [];
-    poll.answerOptions.sort((a, b) => b._count.votes - a._count.votes);
-    for (const answerOption of poll.answerOptions) {
-      pollResult.push(
-        `${answerOption.content} - ${answerOption._count.votes} votes`,
-      );
-    }
 
     const excelFile = await this.filesService.exportDataToBuffer(pollId);
 
@@ -150,12 +132,10 @@ export class MailsService {
       context: {
         question: poll.question,
         author: poll.author.firstName + ' ' + poll.author.lastName,
-        htmlPollResult:
-          poll.answerType !== AnswerType.input ? 'Poll Result:' : null,
-        pollResult:
-          pollResult.length !== 0
-            ? pollResult.toString().replace(/,+/g, '\n')
-            : null,
+        isPollResult: poll.answerType === AnswerType.input ? false : true,
+        answerOptions: poll.answerOptions.sort(
+          (a, b) => b._count.votes - a._count.votes,
+        ),
       },
     });
   }

@@ -27,6 +27,7 @@ export class PollSchedule {
             poll.id,
             PollStatus.completed,
           );
+          await this.pollsService.updatePollResultAnswer(poll.id);
           await this.pollsService.sendPollEmail(updatePoll.poll);
         }
       }),
