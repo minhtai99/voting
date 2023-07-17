@@ -1,3 +1,4 @@
+import { POLL_CACHE_KEY } from './../constants/cacher.constant';
 import { MailEvent } from './../mails/mails.enum';
 import { FilesService } from './../files/files.service';
 import { AuthService } from 'src/auth/auth.service';
@@ -32,6 +33,8 @@ import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
 import { AnswerOptionDto } from '../answer-option/dto/answer-option.dto';
 import { AnswerOptionService } from '../answer-option/answer-option.service';
 import { PostPollDto } from './dto/post-poll.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class PollsService {
@@ -43,7 +46,17 @@ export class PollsService {
     @Inject(forwardRef(() => FilesService))
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  async clearCache() {
+    const keys: string[] = await this.cacheManager.store.keys();
+    keys.forEach((key) => {
+      if (key.startsWith(POLL_CACHE_KEY)) {
+        this.cacheManager.del(key);
+      }
+    });
+  }
 
   async createPoll(
     user: UserDto,
@@ -78,6 +91,7 @@ export class PollsService {
     });
 
     poll.token = await this.updatePollToken(poll.id);
+    this.clearCache();
     return new PollDto(poll);
   }
 
@@ -147,6 +161,7 @@ export class PollsService {
       },
     });
 
+    this.clearCache();
     return new PollDto(updatedPoll);
   }
 
@@ -162,6 +177,7 @@ export class PollsService {
     }
     await this.prisma.poll.delete({ where: { id: poll.id } });
 
+    this.clearCache();
     return { message: MSG_DELETE_POLL_SUCCESSFUL };
   }
 
@@ -204,6 +220,7 @@ export class PollsService {
         payloadInvitation,
       );
 
+      this.clearCache();
       return updatePoll;
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
@@ -211,6 +228,13 @@ export class PollsService {
   }
 
   async getPollList(filterPollDto: FilterPollDto) {
+    const cacheItems = await this.cacheManager.get(
+      `poll-list-${JSON.stringify(filterPollDto)}`,
+    );
+    if (!!cacheItems) {
+      return cacheItems;
+    }
+
     const page = filterPollDto.page || 1;
     const size = filterPollDto.size || 10;
     const where = filterPollDto.where;
@@ -234,6 +258,13 @@ export class PollsService {
     const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
     const prevPage = page - 1 < 1 ? null : page - 1;
 
+    await this.cacheManager.set(`poll-list-${JSON.stringify(filterPollDto)}`, {
+      total: total,
+      currentPage: page,
+      nextPage,
+      prevPage,
+      polls: polls.map((poll) => new PollDto(poll)),
+    });
     return {
       total: total,
       currentPage: page,
@@ -244,7 +275,14 @@ export class PollsService {
   }
 
   async getPollById(pollId: number) {
+    const cacheItem: PollDto = await this.cacheManager.get(`poll-${pollId}`);
+    if (!!cacheItem) {
+      return cacheItem;
+    }
     const poll = await this.findPollById(pollId);
+
+    await this.cacheManager.set(`poll-${pollId}`, new PollDto(poll));
+
     return { poll: new PollDto(poll), token: poll.token };
   }
 
@@ -392,6 +430,8 @@ export class PollsService {
           invitedUsers: true,
         },
       });
+
+      this.clearCache();
       return {
         message: MSG_UPDATE_SUCCESSFUL,
         poll: new PollDto(updatePoll),

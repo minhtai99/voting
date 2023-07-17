@@ -14,6 +14,7 @@ import { PollsModule } from './polls/polls.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { VotesModule } from './votes/votes.module';
 import { AnswerOptionModule } from './answer-option/answer-option.module';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -34,6 +35,11 @@ import { AnswerOptionModule } from './answer-option/answer-option.module';
     ScheduleModule.forRoot(),
     VotesModule,
     AnswerOptionModule,
+    CacheModule.register({
+      isGlobal: true,
+      ttl: parseInt(process.env.CACHE_TLL) * 60000,
+      max: parseInt(process.env.CACHE_MAX),
+    }),
   ],
   controllers: [],
   providers: [
@@ -44,6 +50,10 @@ import { AnswerOptionModule } from './answer-option/answer-option.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
     },
   ],
 })

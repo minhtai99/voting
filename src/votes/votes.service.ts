@@ -1,3 +1,4 @@
+import { VOTE_CACHE_KEY } from './../constants/cacher.constant';
 import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
@@ -7,19 +8,32 @@ import {
 } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
 import { FilterVoteDto } from './dto/filter-vote.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+
 @Injectable()
 export class VotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pollsService: PollsService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  async clearCache() {
+    const keys: string[] = await this.cacheManager.store.keys();
+    keys.forEach((key) => {
+      if (key.startsWith(VOTE_CACHE_KEY)) {
+        this.cacheManager.del(key);
+      }
+    });
+  }
 
   async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
     const poll: PollDto = req['poll'];
@@ -58,15 +72,37 @@ export class VotesService {
         },
       },
     });
+
+    this.clearCache();
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
   }
 
   async findVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
-    return this.pollsService.findVoteByPollId(user, poll.id);
+    const cacheItem = await this.cacheManager.get(
+      `vote-userId${user.id}-pollId${poll.id}`,
+    );
+    if (!!cacheItem) {
+      return cacheItem;
+    }
+
+    const vote = await this.pollsService.findVoteByPollId(user, poll.id);
+
+    await this.cacheManager.set(
+      `vote-userId-${user.id}-pollId-${poll.id}`,
+      vote,
+    );
+    return vote;
   }
 
   async getVotingList(filterVoteDto: FilterVoteDto) {
+    const cacheItems = await this.cacheManager.get(
+      `vote-list-${JSON.stringify(filterVoteDto)}`,
+    );
+    if (!!cacheItems) {
+      return cacheItems;
+    }
+
     const page = filterVoteDto.page || 1;
     const size = filterVoteDto.size || 10;
     const where = filterVoteDto.where;
@@ -86,9 +122,17 @@ export class VotesService {
       take: size,
       orderBy,
     });
+
     const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
     const prevPage = page - 1 < 1 ? null : page - 1;
 
+    await this.cacheManager.set(`vote-list-${JSON.stringify(filterVoteDto)}`, {
+      total: total,
+      currentPage: page,
+      nextPage,
+      prevPage,
+      votes: votes.map((vote) => new VoteDto(vote)),
+    });
     return {
       total: total,
       currentPage: page,

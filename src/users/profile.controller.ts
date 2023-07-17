@@ -34,7 +34,7 @@ export class ProfileController {
 
   @Get()
   async getProfile(@User() user: UserDto) {
-    return new UserDto(await this.usersService.findUserById(user.id));
+    return await this.usersService.getUserById(user.id);
   }
 
   @Patch()
