@@ -14,7 +14,7 @@ import { PollsModule } from './polls/polls.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { VotesModule } from './votes/votes.module';
 import { AnswerOptionModule } from './answer-option/answer-option.module';
-import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -50,10 +50,6 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor,
     },
   ],
 })

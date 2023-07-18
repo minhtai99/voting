@@ -61,7 +61,7 @@ export class AuthService {
 
   async login(loginAuthDto: LoginAuthDto) {
     const { email, password, isRemember } = loginAuthDto;
-    const foundUser = await this.usersService.findUserByEmail(email);
+    const foundUser: UserDto = await this.usersService.findUserByEmail(email);
     if (!foundUser) {
       throw new BadRequestException(MSG_WRONG_LOGIN_INFORMATION);
     }
@@ -108,10 +108,7 @@ export class AuthService {
 
     const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
 
-    const foundUser = await this.usersService.findUserByEmail(payload.email);
-    if (!foundUser) {
-      throw new NotFoundException(MSG_USER_NOT_FOUND);
-    }
+    const foundUser = await this.getUser(payload.email);
 
     const isMatch = await compareHashedData(
       refreshToken.slice(refreshToken.lastIndexOf('.')),
@@ -141,10 +138,7 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const foundUser = await this.usersService.findUserByEmail(email);
-    if (!foundUser) {
-      throw new NotFoundException(MSG_USER_NOT_FOUND);
-    }
+    const foundUser = await this.getUser(email);
 
     const payload: JwtPayload = {
       id: foundUser.id,
@@ -168,10 +162,7 @@ export class AuthService {
     const { newPassword, token } = resetPassDto;
     const payload = await this.verifyToken(token, TokenType.RESET_PASS);
 
-    const foundUser = await this.usersService.findUserByEmail(payload.email);
-    if (!foundUser) {
-      throw new NotFoundException(MSG_USER_NOT_FOUND);
-    }
+    const foundUser = await this.getUser(payload.email);
 
     const isMatch = await compareHashedData(
       token.slice(token.lastIndexOf('.')),
@@ -210,6 +201,14 @@ export class AuthService {
     } catch {
       throw new BadRequestException(MSG_ERROR_CREATE_TOKEN);
     }
+  }
+
+  async getUser(email: string) {
+    const foundUser: UserDto = await this.usersService.findUserByEmail(email);
+    if (!foundUser) {
+      throw new NotFoundException(MSG_USER_NOT_FOUND);
+    }
+    return foundUser;
   }
 
   // setCookie(key: string, value: string, req: Request) {
