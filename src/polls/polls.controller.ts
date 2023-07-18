@@ -1,3 +1,4 @@
+import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { InviteUsersDto } from './dto/invite-user.dto';
 import { PostPollDto } from './dto/post-poll.dto';
 import { VoteGuard } from './../votes/vote.guard';
@@ -65,6 +66,7 @@ export class PollsController {
   @Post()
   @UseInterceptors(
     new UploadFilesErrorsInterceptor(),
+    new TransformDtoInterceptor(PollDto),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -108,7 +110,7 @@ export class PollsController {
       }
       return {
         message: MSG_SUCCESSFUL_POLL_CREATION,
-        poll,
+        data: poll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);
@@ -119,6 +121,7 @@ export class PollsController {
   @Post('draft')
   @UseInterceptors(
     new UploadFilesErrorsInterceptor(),
+    new TransformDtoInterceptor(PollDto),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -149,7 +152,7 @@ export class PollsController {
       );
       return {
         message: MSG_SAVE_DRAFT_SUCCESSFUL,
-        poll,
+        data: poll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);
@@ -158,6 +161,7 @@ export class PollsController {
   }
 
   @Post('participant-polls')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   getParticipantPolls(
     @User() user: UserDto,
     @Body() filterPollDto: FilterPollDto,
@@ -174,6 +178,7 @@ export class PollsController {
   }
 
   @Post('my-polls')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   getMyPolls(@User() user: UserDto, @Body() filterPollDto: FilterPollDto) {
     try {
       filterPollDto.where = {
@@ -187,6 +192,7 @@ export class PollsController {
   }
 
   @Get(':pollId')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   @UseGuards(VoteGuard)
   async getPollById(@Param('pollId', ParseIntPipe) pollId: number) {
     try {
@@ -197,6 +203,7 @@ export class PollsController {
   }
 
   @Patch('invite-people')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   @UseGuards(PollAuthorGuard)
   async updateInvitePeople(@Req() req: Request, @Body() body: InviteUsersDto) {
     const poll: PollDto = req['poll'];
@@ -207,6 +214,7 @@ export class PollsController {
   }
 
   @Patch(':pollId/start-now')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   @UseGuards(PollAuthorGuard)
   async startPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
@@ -218,11 +226,12 @@ export class PollsController {
       where: { id: poll.id },
       data: { startDate: new Date(), status: PollStatus.ongoing },
     });
-    await this.pollsService.sendPollEmail(updatePoll.poll);
+    await this.pollsService.sendPollEmail(updatePoll.data);
     return updatePoll;
   }
 
   @Patch(':pollId/end-now')
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   @UseGuards(PollAuthorGuard)
   async endPoll(@Req() req: Request) {
     const poll: PollDto = req['poll'];
@@ -234,13 +243,14 @@ export class PollsController {
       where: { id: poll.id },
       data: { endDate: new Date(), status: PollStatus.completed },
     });
-    await this.pollsService.sendPollEmail(updatePoll.poll);
+    await this.pollsService.sendPollEmail(updatePoll.data);
     return updatePoll;
   }
 
   @Patch(':pollId/post')
   @UseGuards(PollAuthorGuard)
   @UseInterceptors(
+    new TransformDtoInterceptor(PollDto),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -276,7 +286,7 @@ export class PollsController {
       );
       return {
         message: MSG_SUCCESSFUL_POLL_CREATION,
-        poll: updatePoll,
+        data: updatePoll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);
@@ -287,6 +297,7 @@ export class PollsController {
   @Patch(':pollId/save-draft')
   @UseGuards(PollAuthorGuard)
   @UseInterceptors(
+    new TransformDtoInterceptor(PollDto),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -319,7 +330,7 @@ export class PollsController {
       );
       return {
         message: MSG_SAVE_DRAFT_SUCCESSFUL,
-        poll: updatePoll,
+        data: updatePoll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);
@@ -330,6 +341,7 @@ export class PollsController {
   @Patch(':pollId/edit')
   @UseGuards(PollAuthorGuard)
   @UseInterceptors(
+    new TransformDtoInterceptor(PollDto),
     FileFieldsInterceptor(
       [
         { name: FieldName.PICTURES, maxCount: 10 },
@@ -366,7 +378,7 @@ export class PollsController {
       );
       return {
         message: MSG_UPDATE_SUCCESSFUL,
-        poll: updatePoll,
+        data: updatePoll,
       };
     } catch (error) {
       this.pollsService.deleteFilesIfThereIsAnError(images);

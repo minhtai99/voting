@@ -1,27 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Poll, PollStatus, AnswerType, Vote } from '@prisma/client';
+import { Poll, PollStatus, AnswerType } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
 import { UserDto } from '../../users/dto/user.dto';
-import { Exclude } from 'class-transformer';
+import { Exclude, Type } from 'class-transformer';
 import { VoteDto } from 'src/votes/dto/vote.dto';
 
 export class PollDto implements Poll {
-  constructor({ author, invitedUsers, votes, ...data }: Partial<PollDto>) {
-    Object.assign(this, data);
-
-    if (author) {
-      this.author = new UserDto(author);
-    }
-    if (invitedUsers) {
-      this.invitedUsers = invitedUsers.map(
-        (invitedUser) => new UserDto(invitedUser),
-      );
-    }
-    if (votes) {
-      this.votes = votes.map((vote) => new VoteDto(vote));
-    }
-  }
-
   @ApiProperty()
   id: number;
 
@@ -62,17 +46,22 @@ export class PollDto implements Poll {
   authorId: number;
 
   @ApiProperty({ isArray: true, type: AnswerOptionDto })
+  @Type(() => AnswerOptionDto)
   answer?: AnswerOptionDto[];
 
   @ApiProperty({ isArray: true, type: UserDto })
+  @Type(() => UserDto)
   invitedUsers?: UserDto[];
 
   @ApiProperty({ isArray: true, type: AnswerOptionDto })
+  @Type(() => AnswerOptionDto)
   answerOptions?: AnswerOptionDto[];
 
   @ApiProperty({ type: UserDto })
+  @Type(() => UserDto)
   author: UserDto;
 
   @ApiProperty({ type: VoteDto })
-  votes: Vote[];
+  @Type(() => VoteDto)
+  votes: VoteDto[];
 }

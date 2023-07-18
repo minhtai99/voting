@@ -86,7 +86,7 @@ export class PollsService extends CrudService {
     const poll = await this.createData(args);
 
     poll.token = await this.updatePollToken(poll.id);
-    return new PollDto(poll);
+    return poll;
   }
 
   async updatePoll(
@@ -156,7 +156,7 @@ export class PollsService extends CrudService {
     };
     const updatedPoll = await this.updateData(args);
 
-    return new PollDto(updatedPoll);
+    return updatedPoll;
   }
 
   async deletePoll(poll: PollDto) {
@@ -212,7 +212,7 @@ export class PollsService extends CrudService {
         payloadInvitation,
       );
 
-      return updatePoll;
+      return { data: updatePoll };
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }
@@ -226,13 +226,13 @@ export class PollsService extends CrudService {
       currentPage: payload.currentPage,
       nextPage: payload.nextPage,
       prevPage: payload.prevPage,
-      polls: payload.data.map((poll) => new PollDto(poll)),
+      data: payload.data,
     };
   }
 
   async getPollById(pollId: number) {
     const poll: PollDto = await this.findPollById(pollId);
-    return { poll: new PollDto(poll), token: poll.token };
+    return { data: poll, token: poll.token };
   }
 
   async findPollById(pollId: number) {
@@ -270,7 +270,7 @@ export class PollsService extends CrudService {
       },
     };
     const poll = await this.getDataByUnique({ id: pollId }, include);
-    return new PollDto(poll);
+    return poll;
   }
 
   async getPrismaPollData(
@@ -374,7 +374,7 @@ export class PollsService extends CrudService {
 
       return {
         message: MSG_UPDATE_SUCCESSFUL,
-        poll: new PollDto(updatePoll),
+        data: updatePoll,
       };
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);

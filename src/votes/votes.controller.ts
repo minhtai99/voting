@@ -1,3 +1,5 @@
+import { VoteDto } from 'src/votes/dto/vote.dto';
+import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { MSG_VOTE_NOT_FOUND } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -11,6 +13,7 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
@@ -28,6 +31,7 @@ export class VotesController {
 
   @Post()
   @UseGuards(VoteGuard)
+  @UseInterceptors(new TransformDtoInterceptor(VoteDto))
   createAndUpdateVote(
     @User() user: UserDto,
     @Body() createVoteDto: CreateVoteDto,
@@ -43,9 +47,10 @@ export class VotesController {
   })
   @Post('get-vote')
   @UseGuards(VoteGuard)
+  @UseInterceptors(new TransformDtoInterceptor(VoteDto))
   async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
-      return this.votesService.findVoteByPollId(user, req);
+      return { data: await this.votesService.getVoteByPollId(user, req) };
     } catch {
       throw new NotFoundException(MSG_VOTE_NOT_FOUND);
     }
@@ -53,6 +58,7 @@ export class VotesController {
 
   @Post(':pollId/search')
   @UseGuards(VoteGuard)
+  @UseInterceptors(new TransformDtoInterceptor(VoteDto))
   async getVotingList(
     @Body() filterVoteDto: FilterVoteDto,
     @Param('pollId', ParseIntPipe) pollId: number,

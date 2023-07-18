@@ -40,11 +40,8 @@ export class UsersService extends CrudService {
     }
 
     const users = await this.prisma.user.findMany();
-    await this.cacheManager.set(
-      `${USER_CACHE_KEY}-all`,
-      users.map((user) => new UserDto(user)),
-    );
-    return users.map((user) => new UserDto(user));
+    await this.cacheManager.set(`${USER_CACHE_KEY}-all`, users);
+    return users;
   }
 
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
@@ -61,7 +58,7 @@ export class UsersService extends CrudService {
 
       return {
         message: MSG_UPDATE_SUCCESSFUL,
-        user: new UserDto(updateUser),
+        data: updateUser,
       };
     } catch {
       throw new InternalServerErrorException(MSG_UPDATE_FAIL);
@@ -139,8 +136,7 @@ export class UsersService extends CrudService {
   }
 
   async getUserById(userId: number) {
-    const user = await this.getDataByUnique({ id: userId });
-    return new UserDto(user);
+    return { data: await this.getDataByUnique({ id: userId }) };
   }
 
   async findUserByEmail(email: string) {

@@ -1,3 +1,4 @@
+import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { fileConfig } from './../helpers/files.helper';
 import { ChangePassDto } from './dto/change-password.dto';
 import {
@@ -33,11 +34,13 @@ export class ProfileController {
   ) {}
 
   @Get()
+  @UseInterceptors(new TransformDtoInterceptor(UserDto))
   async getProfile(@User() user: UserDto) {
     return await this.usersService.getUserById(user.id);
   }
 
   @Patch()
+  @UseInterceptors(new TransformDtoInterceptor(UserDto))
   updateUser(@User() user: UserDto, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.updateUser(user, updateUserDto);
   }
@@ -51,6 +54,7 @@ export class ProfileController {
         folder: 'avatars',
       }),
     ),
+    new TransformDtoInterceptor(UserDto),
   )
   async updateAvatar(
     @User() user: UserDto,
