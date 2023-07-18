@@ -1,6 +1,7 @@
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -16,26 +17,47 @@ import {
   MSG_UPDATE_SUCCESSFUL,
 } from '../constants/message.constant';
 import { ChangePassDto } from './dto/change-password.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { USER_CACHE_KEY } from '../constants/cache.constant';
+import { CrudService } from 'src/crud/crud.service';
 
 @Injectable()
-export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+export class UsersService extends CrudService {
+  constructor(
+    protected readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+  ) {
+    super(cacheManager, prisma, USER_CACHE_KEY);
+  }
 
   async getAllUsers() {
+    const cacheItems: UserDto[] = await this.cacheManager.get(
+      `${USER_CACHE_KEY}-all`,
+    );
+    if (!!cacheItems) {
+      return cacheItems;
+    }
+
     const users = await this.prisma.user.findMany();
+    await this.cacheManager.set(
+      `${USER_CACHE_KEY}-all`,
+      users.map((user) => new UserDto(user)),
+    );
     return users.map((user) => new UserDto(user));
   }
 
   async updateUser(user: UserDto, updateUserDto: UpdateUserDto) {
     try {
-      const updateUser = await this.prisma.user.update({
+      const args = {
         where: {
           email: user.email,
         },
         data: {
           ...updateUserDto,
         },
-      });
+      };
+      const updateUser = await this.updateData(args);
 
       return {
         message: MSG_UPDATE_SUCCESSFUL,
@@ -48,33 +70,35 @@ export class UsersService {
 
   async createUser(register: CreateUserDto) {
     register.password = await hashData(register.password);
-
-    const newUser = await this.prisma.user.create({
+    const args = {
       data: register,
-    });
-    return newUser;
+    };
+
+    return await this.createData(args);
   }
 
   async updateRefreshTokenHash(userId: number, refreshToken?: string | null) {
-    await this.prisma.user.update({
+    const args = {
       where: {
         id: userId,
       },
       data: {
         refreshTokenHash: await this.hashToken(refreshToken),
       },
-    });
+    };
+    await this.updateData(args);
   }
 
   async updateResetPasswordHash(userId: number, resetPass?: string | null) {
-    await this.prisma.user.update({
+    const args = {
       where: {
         id: userId,
       },
       data: {
         resetPasswordHash: await this.hashToken(resetPass),
       },
-    });
+    };
+    await this.updateData(args);
   }
 
   async hashToken(token?: string | null) {
@@ -84,7 +108,7 @@ export class UsersService {
   }
 
   async updatePassword(userId: number, newPassword: string) {
-    await this.prisma.user.update({
+    const args = {
       where: {
         id: userId,
       },
@@ -92,7 +116,8 @@ export class UsersService {
         password: await hashData(newPassword),
         resetPasswordHash: null,
       },
-    });
+    };
+    await this.updateData(args);
   }
 
   async changePassword(user: UserDto, changePassDto: ChangePassDto) {
@@ -109,22 +134,16 @@ export class UsersService {
     }
 
     await this.updatePassword(user.id, changePassDto.newPassword);
+
     return { message: MSG_CHANGE_PASSWORD_SUCCESSFUL };
   }
 
-  async findUserById(userId: number) {
-    return await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+  async getUserById(userId: number) {
+    const user = await this.getDataByUnique({ id: userId });
+    return new UserDto(user);
   }
 
   async findUserByEmail(email: string) {
-    return await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    return await this.getDataByUnique({ email });
   }
 }

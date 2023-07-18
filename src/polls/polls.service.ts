@@ -1,3 +1,4 @@
+import { POLL_CACHE_KEY } from '../constants/cache.constant';
 import { MailEvent } from './../mails/mails.enum';
 import { FilesService } from './../files/files.service';
 import { AuthService } from 'src/auth/auth.service';
@@ -32,18 +33,24 @@ import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
 import { AnswerOptionDto } from '../answer-option/dto/answer-option.dto';
 import { AnswerOptionService } from '../answer-option/answer-option.service';
 import { PostPollDto } from './dto/post-poll.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CrudService } from 'src/crud/crud.service';
 
 @Injectable()
-export class PollsService {
+export class PollsService extends CrudService {
   constructor(
-    private readonly prisma: PrismaService,
+    protected readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly answerOptionService: AnswerOptionService,
     @Inject(forwardRef(() => FilesService))
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+  ) {
+    super(cacheManager, prisma, POLL_CACHE_KEY);
+  }
 
   async createPoll(
     user: UserDto,
@@ -59,7 +66,7 @@ export class PollsService {
       backgroundUrl,
     );
 
-    const poll = await this.prisma.poll.create({
+    const args = {
       data: {
         ...data.payload,
         author: { connect: { id: user.id } },
@@ -75,7 +82,8 @@ export class PollsService {
         answerOptions: true,
         invitedUsers: true,
       },
-    });
+    };
+    const poll = await this.createData(args);
 
     poll.token = await this.updatePollToken(poll.id);
     return new PollDto(poll);
@@ -125,7 +133,7 @@ export class PollsService {
       }
     }
 
-    const updatedPoll = await this.prisma.poll.update({
+    const args = {
       where: {
         id: oldPoll.id,
       },
@@ -145,7 +153,8 @@ export class PollsService {
         answerOptions: true,
         invitedUsers: true,
       },
-    });
+    };
+    const updatedPoll = await this.updateData(args);
 
     return new PollDto(updatedPoll);
   }
@@ -160,8 +169,7 @@ export class PollsService {
       );
       picturesUrl.forEach((url) => this.filesService.deleteFile(url, 'images'));
     }
-    await this.prisma.poll.delete({ where: { id: poll.id } });
-
+    await this.deleteData(poll.id);
     return { message: MSG_DELETE_POLL_SUCCESSFUL };
   }
 
@@ -211,87 +219,57 @@ export class PollsService {
   }
 
   async getPollList(filterPollDto: FilterPollDto) {
-    const page = filterPollDto.page || 1;
-    const size = filterPollDto.size || 10;
-    const where = filterPollDto.where;
-    const select = filterPollDto.select;
-    const orderBy = filterPollDto.orderBy;
-
-    const skip = (page - 1) * size;
-
-    const total = await this.prisma.poll.count({
-      where,
-    });
-
-    const polls = await this.prisma.poll.findMany({
-      select,
-      where,
-      skip,
-      take: size,
-      orderBy,
-    });
-
-    const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
-    const prevPage = page - 1 < 1 ? null : page - 1;
+    const payload: any = await this.getList(filterPollDto);
 
     return {
-      total: total,
-      currentPage: page,
-      nextPage,
-      prevPage,
-      polls: polls.map((poll) => new PollDto(poll)),
+      total: payload.total,
+      currentPage: payload.currentPage,
+      nextPage: payload.nextPage,
+      prevPage: payload.prevPage,
+      polls: payload.data.map((poll) => new PollDto(poll)),
     };
   }
 
   async getPollById(pollId: number) {
-    const poll = await this.findPollById(pollId);
+    const poll: PollDto = await this.findPollById(pollId);
     return { poll: new PollDto(poll), token: poll.token };
   }
 
   async findPollById(pollId: number) {
-    const poll = await this.prisma.poll.findUnique({
-      where: {
-        id: pollId,
-      },
-      include: {
-        _count: true,
-        author: true,
-        answerOptions: {
-          include: {
-            _count: {
-              select: { votes: true },
-            },
-          },
-        },
-        invitedUsers: true,
-        votes: {
-          include: {
-            participant: true,
-            answers: true,
+    const include = {
+      _count: true,
+      author: true,
+      answerOptions: {
+        include: {
+          _count: {
+            select: { votes: true },
           },
         },
       },
-    });
-    return poll;
+      invitedUsers: true,
+      votes: {
+        include: {
+          participant: true,
+          answers: true,
+        },
+      },
+    };
+    return await this.getDataByUnique({ id: pollId }, include);
   }
 
   async findVoteByPollId(user: UserDto, pollId: number) {
-    const poll = await this.prisma.poll.findUnique({
-      where: {
-        id: pollId,
-      },
-      include: {
-        answerOptions: true,
-        votes: {
-          include: {
-            answers: true,
-          },
-          where: {
-            participantId: user.id,
-          },
+    const include = {
+      answerOptions: true,
+      votes: {
+        include: {
+          answers: true,
+        },
+        where: {
+          participantId: user.id,
         },
       },
-    });
+    };
+    const poll = await this.getDataByUnique({ id: pollId }, include);
     return new PollDto(poll);
   }
 
@@ -383,7 +361,7 @@ export class PollsService {
 
   async updatePrismaPoll(payload: { where: any; data: any }) {
     try {
-      const updatePoll = await this.prisma.poll.update({
+      const args = {
         where: payload.where,
         data: payload.data,
         include: {
@@ -391,7 +369,9 @@ export class PollsService {
           answerOptions: true,
           invitedUsers: true,
         },
-      });
+      };
+      const updatePoll = await this.updateData(args);
+
       return {
         message: MSG_UPDATE_SUCCESSFUL,
         poll: new PollDto(updatePoll),
@@ -455,12 +435,13 @@ export class PollsService {
       { pollId },
       TokenType.POLL_PERMISSION,
     );
-    await this.prisma.poll.update({
+    const args = {
       where: { id: pollId },
       data: {
         token,
       },
-    });
+    };
+    await this.updateData(args);
     return token;
   }
 

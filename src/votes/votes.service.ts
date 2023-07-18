@@ -1,3 +1,4 @@
+import { VOTE_CACHE_KEY } from '../constants/cache.constant';
 import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
@@ -7,19 +8,26 @@ import {
 } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
 import { FilterVoteDto } from './dto/filter-vote.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CrudService } from 'src/crud/crud.service';
+
 @Injectable()
-export class VotesService {
+export class VotesService extends CrudService {
   constructor(
-    private readonly prisma: PrismaService,
+    protected readonly prisma: PrismaService,
     private readonly pollsService: PollsService,
-  ) {}
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+  ) {
+    super(cacheManager, prisma, VOTE_CACHE_KEY);
+  }
 
   async upsert(user: UserDto, createVoteDto: CreateVoteDto, req: Request) {
     const poll: PollDto = req['poll'];
@@ -28,7 +36,7 @@ export class VotesService {
     }
     this.votingDataValidation(poll, createVoteDto);
 
-    const vote = await this.prisma.vote.upsert({
+    const args = {
       where: {
         pollId_participantId: {
           participantId: user.id,
@@ -57,44 +65,27 @@ export class VotesService {
           },
         },
       },
-    });
+    };
+    const vote = await this.upsertData(args);
+
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
   }
 
   async findVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
-    return this.pollsService.findVoteByPollId(user, poll.id);
+    const vote = await this.pollsService.findVoteByPollId(user, poll.id);
+    return vote;
   }
 
   async getVotingList(filterVoteDto: FilterVoteDto) {
-    const page = filterVoteDto.page || 1;
-    const size = filterVoteDto.size || 10;
-    const where = filterVoteDto.where;
-    const select = filterVoteDto.select;
-    const orderBy = filterVoteDto.orderBy;
-
-    const skip = (page - 1) * size;
-
-    const total = await this.prisma.vote.count({
-      where,
-    });
-
-    const votes = await this.prisma.vote.findMany({
-      where,
-      select,
-      skip,
-      take: size,
-      orderBy,
-    });
-    const nextPage = page + 1 > Math.ceil(total / size) ? null : page + 1;
-    const prevPage = page - 1 < 1 ? null : page - 1;
+    const payload: any = await this.getList(filterVoteDto);
 
     return {
-      total: total,
-      currentPage: page,
-      nextPage,
-      prevPage,
-      votes: votes.map((vote) => new VoteDto(vote)),
+      total: payload.total,
+      currentPage: payload.currentPage,
+      nextPage: payload.nextPage,
+      prevPage: payload.prevPage,
+      votes: payload.data.map((vote) => new VoteDto(vote)),
     };
   }
 

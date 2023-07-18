@@ -1,4 +1,7 @@
-import { MSG_TOKEN_DOES_NOT_MATCH } from './../constants/message.constant';
+import {
+  MSG_POLL_NOT_FOUND,
+  MSG_TOKEN_DOES_NOT_MATCH,
+} from './../constants/message.constant';
 import { AuthService } from './../auth/auth.service';
 import { PollsService } from './../polls/polls.service';
 import { TokenType } from './../auth/auth.enum';
@@ -8,6 +11,7 @@ import {
   ExecutionContext,
   BadRequestException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PollDto } from 'src/polls/dto/poll.dto';
@@ -37,6 +41,9 @@ export class VoteGuard implements CanActivate {
       TokenType.POLL_PERMISSION,
     );
     const poll = await this.pollsService.findPollById(payload.pollId);
+    if (!poll) {
+      throw new NotFoundException(MSG_POLL_NOT_FOUND);
+    }
     if (poll.token !== request.body.token) {
       throw new BadRequestException(MSG_TOKEN_DOES_NOT_MATCH);
     }
@@ -50,6 +57,9 @@ export class VoteGuard implements CanActivate {
     let poll: PollDto;
     if (request.params.pollId) {
       poll = await this.pollsService.findPollById(+request.params.pollId);
+      if (!poll) {
+        throw new NotFoundException(MSG_POLL_NOT_FOUND);
+      }
     } else {
       poll = request['poll'];
     }
