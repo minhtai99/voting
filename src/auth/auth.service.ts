@@ -55,7 +55,7 @@ export class AuthService {
 
     return {
       message: MSG_REGISTER_SUCCESSFUL,
-      user: new UserDto(await this.usersService.createUser(register)),
+      data: await this.usersService.createUser(register),
     };
   }
 
@@ -90,7 +90,7 @@ export class AuthService {
       message: MSG_LOGIN_SUCCESSFUL,
       AccessToken: accessToken,
       RefreshToken: refreshToken,
-      user: new UserDto(foundUser),
+      data: foundUser,
     };
   }
 

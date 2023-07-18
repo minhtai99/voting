@@ -19,7 +19,7 @@ export class PollSchedule {
             poll.id,
             PollStatus.ongoing,
           );
-          await this.pollsService.sendPollEmail(updatePoll.poll);
+          await this.pollsService.sendPollEmail(updatePoll.data);
         }
 
         if (poll.status === PollStatus.ongoing) {
@@ -28,7 +28,7 @@ export class PollSchedule {
             PollStatus.completed,
           );
           await this.pollsService.updatePollResultAnswer(poll.id);
-          await this.pollsService.sendPollEmail(updatePoll.poll);
+          await this.pollsService.sendPollEmail(updatePoll.data);
         }
       }),
     )

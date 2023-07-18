@@ -10,7 +10,6 @@ import { UserDto } from '../users/dto/user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
-import { VoteDto } from './dto/vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { Request } from 'express';
@@ -68,13 +67,25 @@ export class VotesService extends CrudService {
     };
     const vote = await this.upsertData(args);
 
-    return { message: MSG_SUCCESSFUL_VOTE_CREATION, vote: new VoteDto(vote) };
+    return { message: MSG_SUCCESSFUL_VOTE_CREATION, data: vote };
   }
 
   async findVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
-    const vote = await this.pollsService.findVoteByPollId(user, poll.id);
-    return vote;
+    return await this.pollsService.findVoteByPollId(user, poll.id);
+  }
+  async getVoteByPollId(user: UserDto, req: Request) {
+    const poll: PollDto = req['poll'];
+    const args = {
+      where: { participantId: user.id, pollId: poll.id },
+      include: {
+        answers: true,
+        poll: {
+          include: { answerOptions: true },
+        },
+      },
+    };
+    return await this.getDataByUnique(args.where, args.include);
   }
 
   async getVotingList(filterVoteDto: FilterVoteDto) {
@@ -85,7 +96,7 @@ export class VotesService extends CrudService {
       currentPage: payload.currentPage,
       nextPage: payload.nextPage,
       prevPage: payload.prevPage,
-      votes: payload.data.map((vote) => new VoteDto(vote)),
+      data: payload.data,
     };
   }
 

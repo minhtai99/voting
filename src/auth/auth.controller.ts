@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -16,11 +24,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @UseInterceptors(new TransformDtoInterceptor(UserDto))
   register(@Body() register: CreateUserDto) {
     return this.authService.register(register);
   }
 
   @Post('login')
+  @UseInterceptors(new TransformDtoInterceptor(UserDto))
   login(@Body() loginAuthDto: LoginAuthDto) {
     return this.authService.login(loginAuthDto);
   }
