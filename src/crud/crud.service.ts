@@ -1,3 +1,4 @@
+import { generateKey } from './../helpers/cache.helper';
 import { PrismaService } from './../prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { FilterCrudDto } from './dto/filter-crud.dto';
@@ -24,10 +25,8 @@ export class CrudService {
   }
 
   async getList(filterCrudDto: FilterCrudDto) {
-    const keys: string[] = await this.cacheManager.store.keys();
-    console.log(keys);
     const cacheItems = await this.cacheManager.get(
-      `${this.cacheKey}-list-${JSON.stringify(filterCrudDto)}`,
+      generateKey(`${this.cacheKey}-list`, filterCrudDto),
     );
     if (!!cacheItems) {
       return cacheItems;
@@ -57,7 +56,7 @@ export class CrudService {
     const prevPage = page - 1 < 1 ? null : page - 1;
 
     await this.cacheManager.set(
-      `${this.cacheKey}-list-${JSON.stringify(filterCrudDto)}`,
+      generateKey(`${this.cacheKey}-list`, filterCrudDto),
       {
         total: total,
         currentPage: page,
@@ -77,7 +76,7 @@ export class CrudService {
 
   async getDataByUnique(where: any, include?: any) {
     const cacheItem = await this.cacheManager.get(
-      `${this.cacheKey}-${JSON.stringify(where)}`,
+      generateKey(this.cacheKey, where),
     );
     if (!!cacheItem) {
       return cacheItem;
@@ -86,22 +85,7 @@ export class CrudService {
       where,
       include,
     });
-    await this.cacheManager.set(
-      `${this.cacheKey}-${JSON.stringify(where)}`,
-      data,
-    );
-    return data;
-  }
-
-  async getAllData() {
-    const cacheItems = await this.cacheManager.get(`${this.cacheKey}-all`);
-    if (!!cacheItems) {
-      return cacheItems;
-    }
-
-    const data = await this.module.findMany({});
-
-    await this.cacheManager.set(`${this.cacheKey}-all`, data);
+    await this.cacheManager.set(generateKey(this.cacheKey, where), data);
     return data;
   }
 

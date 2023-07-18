@@ -32,7 +32,18 @@ export class UsersService extends CrudService {
   }
 
   async getAllUsers() {
-    const users: UserDto[] = await this.getAllData();
+    const cacheItems: UserDto[] = await this.cacheManager.get(
+      `${USER_CACHE_KEY}-all`,
+    );
+    if (!!cacheItems) {
+      return cacheItems;
+    }
+
+    const users = await this.prisma.user.findMany();
+    await this.cacheManager.set(
+      `${USER_CACHE_KEY}-all`,
+      users.map((user) => new UserDto(user)),
+    );
     return users.map((user) => new UserDto(user));
   }
 
