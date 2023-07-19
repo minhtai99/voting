@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { MailListener } from './listeners/mail.listener';
 import { FilesModule } from '../files/files.module';
 import { UsersModule } from 'src/users/users.module';
+import { BullModule } from '@nestjs/bull';
+import { MailProcessor } from './mail.processor';
 
 @Global()
 @Module({
@@ -21,6 +23,10 @@ import { UsersModule } from 'src/users/users.module';
             user: configService.get('MAIL_USER'),
             pass: configService.get('MAIL_PASSWORD'),
           },
+          pool: true,
+          maxConnections: 1,
+          rateDelta: 3500,
+          rateLimit: 1,
         },
         defaults: {
           from: `"SS_Intern" <${configService.get('MAIL_FROM')}>`,
@@ -38,9 +44,12 @@ import { UsersModule } from 'src/users/users.module';
     PollsModule,
     FilesModule,
     UsersModule,
+    BullModule.registerQueue({
+      name: 'send-email',
+    }),
   ],
   controllers: [],
-  providers: [MailsService, MailListener],
+  providers: [MailsService, MailListener, MailProcessor],
   exports: [MailsService, MailListener],
 })
 export class MailsModule {}
