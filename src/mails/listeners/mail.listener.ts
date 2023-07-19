@@ -61,4 +61,13 @@ export class MailListener {
       this.logger.error(error);
     }
   }
+
+  @OnEvent(MailEvent.SEND_MAIL_VOTE_REMINDER)
+  async handleSendEmailVoteReminder(pollId: number) {
+    try {
+      await this.mailService.sendEmailVoteReminder(pollId);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
 }
