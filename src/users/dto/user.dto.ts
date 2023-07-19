@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '@prisma/client';
-import { Exclude } from 'class-transformer';
+import { Exclude, Type } from 'class-transformer';
+import { PollDto } from './../../polls/dto/poll.dto';
+import { VoteDto } from './../../votes/dto/vote.dto';
 
 export class UserDto implements User {
   @ApiProperty()
@@ -32,4 +34,16 @@ export class UserDto implements User {
 
   @Exclude()
   resetPasswordHash: string;
+
+  @ApiProperty({ type: VoteDto })
+  @Type(() => PollDto)
+  invitedPolls: PollDto[];
+
+  @ApiProperty({ type: VoteDto })
+  @Type(() => PollDto)
+  createdPolls: PollDto[];
+
+  @ApiProperty({ type: VoteDto })
+  @Type(() => VoteDto)
+  createdVotes: VoteDto[];
 }

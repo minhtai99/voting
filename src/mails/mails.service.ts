@@ -1,3 +1,4 @@
+import { UsersService } from './../users/users.service';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -13,6 +14,7 @@ export class MailsService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
+    private readonly usersService: UsersService,
     private readonly filesService: FilesService,
   ) {}
 
@@ -143,13 +145,15 @@ export class MailsService {
   }
 
   async sendEmailVoteReminder(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const voteReminderList = await this.usersService.getAllUsersNotVoteByPollId(
+      pollId,
+    );
+    if (voteReminderList.length === 0) return;
+
+    const poll = voteReminderList[0].invitedPolls[0];
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
       poll.token
     }`;
-    const voteReminderList = poll.invitedUsers.filter(
-      (user) => !poll.votes.map((vote) => vote.participantId).includes(user.id),
-    );
     Promise.all(
       voteReminderList.map(
         async (receiver) =>

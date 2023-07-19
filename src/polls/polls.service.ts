@@ -395,7 +395,7 @@ export class PollsService extends CrudService {
     const polls = await this.prisma.poll.findMany({
       where: {
         endDate: {
-          gte: new Date(current.getTime() + 60000 * 10), // current +  14m
+          gte: new Date(current.getTime() + 60000 * 10), // current +  10m
           lte: new Date(current.getTime() + 60000 * 15), // current +  15m
         },
         status: 'ongoing',
