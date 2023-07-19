@@ -1,3 +1,5 @@
+import { UsersService } from './../users/users.service';
+import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
@@ -12,6 +14,7 @@ export class MailsService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
+    private readonly usersService: UsersService,
     private readonly filesService: FilesService,
   ) {}
 
@@ -31,7 +34,7 @@ export class MailsService {
   }
 
   async sendEmailStartedPoll(pollId: number) {
-    const poll = await this.pollsService.findPollById(pollId);
+    const poll: PollDto = await this.pollsService.findPollById(pollId);
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
       poll.token
     }`;
@@ -44,6 +47,7 @@ export class MailsService {
             template: './invitation-vote',
             context: {
               url,
+              receiver: receiver.firstName + ' ' + receiver.lastName,
               author: poll.author.firstName + ' ' + poll.author.lastName,
               question: poll.question,
               endTime: poll.endDate,
@@ -54,7 +58,7 @@ export class MailsService {
   }
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
-    const poll = await this.pollsService.findPollById(pollId);
+    const poll: PollDto = await this.pollsService.findPollById(pollId);
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
       poll.token
     }`;
@@ -79,7 +83,7 @@ export class MailsService {
   }
 
   async sendEmailPollEndedParticipants(pollId: number) {
-    const poll = await this.pollsService.findPollById(pollId);
+    const poll: PollDto = await this.pollsService.findPollById(pollId);
 
     Promise.all(
       poll.votes.map(async (vote) => {
@@ -106,7 +110,7 @@ export class MailsService {
             participantAnswer,
             isPollResult: poll.answerType === AnswerType.input ? false : true,
             answerOptions: poll.answerOptions.sort(
-              (a, b) => b._count.votes - a._count.votes,
+              (a: any, b: any) => b._count.votes - a._count.votes,
             ),
           },
         });
@@ -115,7 +119,7 @@ export class MailsService {
   }
 
   async sendEmailPollEndedAuthor(pollId: number) {
-    const poll = await this.pollsService.findPollById(pollId);
+    const poll: PollDto = await this.pollsService.findPollById(pollId);
 
     const excelFile = await this.filesService.exportDataToBuffer(pollId);
 
@@ -134,9 +138,38 @@ export class MailsService {
         author: poll.author.firstName + ' ' + poll.author.lastName,
         isPollResult: poll.answerType === AnswerType.input ? false : true,
         answerOptions: poll.answerOptions.sort(
-          (a, b) => b._count.votes - a._count.votes,
+          (a: any, b: any) => b._count.votes - a._count.votes,
         ),
       },
     });
+  }
+
+  async sendEmailVoteReminder(pollId: number) {
+    const voteReminderList = await this.usersService.getAllUsersNotVoteByPollId(
+      pollId,
+    );
+    if (voteReminderList.length === 0) return;
+
+    const poll = voteReminderList[0].invitedPolls[0];
+    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
+      poll.token
+    }`;
+    Promise.all(
+      voteReminderList.map(
+        async (receiver) =>
+          await this.mailerService.sendMail({
+            to: receiver.email,
+            subject: `[Reminder] ${poll.title}`,
+            template: './vote-reminder',
+            context: {
+              url,
+              receiver: receiver.firstName + ' ' + receiver.lastName,
+              author: poll.author.firstName + ' ' + poll.author.lastName,
+              question: poll.question,
+              endTime: poll.endDate,
+            },
+          }),
+      ),
+    );
   }
 }

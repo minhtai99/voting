@@ -142,4 +142,32 @@ export class UsersService extends CrudService {
   async findUserByEmail(email: string) {
     return await this.getDataByUnique({ email });
   }
+
+  async getAllUsersNotVoteByPollId(pollId: number) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        invitedPolls: {
+          some: {
+            id: pollId,
+          },
+        },
+        createdVotes: {
+          none: {
+            pollId,
+          },
+        },
+      },
+      include: {
+        invitedPolls: {
+          where: {
+            id: pollId,
+          },
+          include: {
+            author: true,
+          },
+        },
+      },
+    });
+    return users;
+  }
 }

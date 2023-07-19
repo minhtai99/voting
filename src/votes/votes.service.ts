@@ -70,10 +70,6 @@ export class VotesService extends CrudService {
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, data: vote };
   }
 
-  async findVoteByPollId(user: UserDto, req: Request) {
-    const poll: PollDto = req['poll'];
-    return await this.pollsService.findVoteByPollId(user, poll.id);
-  }
   async getVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
     const args = {

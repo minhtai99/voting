@@ -257,22 +257,6 @@ export class PollsService extends CrudService {
     return await this.getDataByUnique({ id: pollId }, include);
   }
 
-  async findVoteByPollId(user: UserDto, pollId: number) {
-    const include = {
-      answerOptions: true,
-      votes: {
-        include: {
-          answers: true,
-        },
-        where: {
-          participantId: user.id,
-        },
-      },
-    };
-    const poll = await this.getDataByUnique({ id: pollId }, include);
-    return poll;
-  }
-
   async getPrismaPollData(
     pollDto: Partial<PostPollDto>,
     picturesUrl: string[],
@@ -402,15 +386,19 @@ export class PollsService extends CrudService {
           },
         ],
       },
-      include: {
-        votes: true,
-        author: true,
-        invitedUsers: true,
-        answerOptions: {
-          include: {
-            _count: true,
-          },
+    });
+    return polls;
+  }
+
+  async getAllPollForScheduleVoteReminder() {
+    const current = new Date();
+    const polls = await this.prisma.poll.findMany({
+      where: {
+        endDate: {
+          gte: new Date(current.getTime() + 60000 * 10), // current +  10m
+          lte: new Date(current.getTime() + 60000 * 15), // current +  15m
         },
+        status: 'ongoing',
       },
     });
     return polls;
