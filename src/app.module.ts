@@ -1,6 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
 import { AuthModule } from './auth/auth.module';
@@ -15,6 +15,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { VotesModule } from './votes/votes.module';
 import { AnswerOptionModule } from './answer-option/answer-option.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -39,6 +40,16 @@ import { CacheModule } from '@nestjs/cache-manager';
       isGlobal: true,
       ttl: parseInt(process.env.CACHE_TLL) * 60000,
       max: parseInt(process.env.CACHE_MAX),
+    }),
+    BullModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          tls: true,
+          enableTLSForSentinelMode: false,
+        } as any,
+        url: configService.get('REDIS_URL'),
+      }),
+      inject: [ConfigService],
     }),
   ],
   controllers: [],
