@@ -34,7 +34,7 @@ export class MailsService {
     const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
       poll.token
     }`;
-    poll.invitedUsers.map(
+    poll.invitedUsers.forEach(
       async (receiver) =>
         await this.sendEmailQueue.add(
           ProcessorName.INVITATION_VOTE,
