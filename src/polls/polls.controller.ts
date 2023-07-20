@@ -421,6 +421,6 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   getTokenUrl(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    return { VoteUrl: getTokenUrl(poll.token, PathUrl.VOTE) };
+    return { voteUrl: getTokenUrl(poll.token, PathUrl.VOTE) };
   }
 }
