@@ -197,7 +197,7 @@ export class PollsService extends CrudService {
         where: { id: poll.id },
         data: {
           invitedUsers: {
-            set: invitedUsers.map((userId) => ({ id: userId })),
+            connect: invitedUsers.map((userId) => ({ id: userId })),
           },
         },
       };

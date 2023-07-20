@@ -1,4 +1,5 @@
 import {
+  MSG_POLL_ID_NOT_EMPTY,
   MSG_POLL_NOT_FOUND,
   MSG_USER_NOT_AUTHOR,
 } from './../constants/message.constant';
@@ -9,6 +10,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PollDto } from './dto/poll.dto';
@@ -23,6 +25,10 @@ export class PollAuthorGuard implements CanActivate {
   }
   async checkAuthor(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
+    if (!request.body.pollId || !request.params.pollId) {
+      throw new BadRequestException(MSG_POLL_ID_NOT_EMPTY);
+    }
+
     let poll: PollDto;
     if (isNaN(+request.params.pollId) || !request.params.pollId) {
       poll = await this.pollsService.findPollById(+request.body.pollId);
