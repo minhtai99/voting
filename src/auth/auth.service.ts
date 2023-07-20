@@ -88,8 +88,8 @@ export class AuthService {
 
     return {
       message: MSG_LOGIN_SUCCESSFUL,
-      AccessToken: accessToken,
-      RefreshToken: refreshToken,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       data: foundUser,
     };
   }
@@ -132,8 +132,8 @@ export class AuthService {
 
     return {
       message: MSG_REFRESH_TOKEN_SUCCESSFUL,
-      AccessToken: newAccessToken,
-      RefreshToken: newRefreshToken,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
   }
 

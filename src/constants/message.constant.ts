@@ -38,6 +38,7 @@ export const MSG_USER_NOT_FOUND = 'User is not found';
 // VOTE API
 export const MSG_VOTE_NOT_FOUND = 'Vote is not found';
 // POLL API
+export const MSG_POLL_ID_NOT_EMPTY = 'PollId cannot be empty';
 export const MSG_POLL_NOT_FOUND = 'Poll is not found';
 export const MSG_USER_NOT_AUTHOR = 'You are not the author of this poll';
 export const MSG_ERROR_SEND_MAIL_POLL =
