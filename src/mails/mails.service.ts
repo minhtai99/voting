@@ -1,3 +1,4 @@
+import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
 import { UsersService } from './../users/users.service';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
@@ -20,9 +21,7 @@ export class MailsService {
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
-    const url = `${this.configService.get(
-      'FRONTEND_URL',
-    )}/auth/reset-password?token=${token}`;
+    const url = getTokenUrl(token, PathUrl.FORGOT_PASSWORD);
     await this.sendEmailQueue.add(ProcessorName.FORGOT_PASSWORD, {
       url,
       receiver,
@@ -31,9 +30,7 @@ export class MailsService {
 
   async sendEmailStartedPoll(pollId: number) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
-      poll.token
-    }`;
+    const url = getTokenUrl(poll.token, PathUrl.VOTE);
     poll.invitedUsers.forEach(
       async (receiver) =>
         await this.sendEmailQueue.add(ProcessorName.INVITATION_VOTE, {
@@ -46,9 +43,7 @@ export class MailsService {
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
-      poll.token
-    }`;
+    const url = getTokenUrl(poll.token, PathUrl.VOTE);
 
     poll.invitedUsers.forEach(async (receiver) => {
       if (newInvitedUsers.some((userId) => userId === receiver.id)) {
@@ -90,9 +85,7 @@ export class MailsService {
     if (voteReminderList.length === 0) return;
 
     const poll = voteReminderList[0].invitedPolls[0];
-    const url = `${this.configService.get('FRONTEND_URL')}/vote?token=${
-      poll.token
-    }`;
+    const url = getTokenUrl(poll.token, PathUrl.VOTE);
     voteReminderList.forEach(
       async (receiver) =>
         await this.sendEmailQueue.add(ProcessorName.VOTE_REMINDER, {
