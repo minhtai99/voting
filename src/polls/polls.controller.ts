@@ -1,3 +1,4 @@
+import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
 import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { InviteUsersDto } from './dto/invite-user.dto';
 import { PostPollDto } from './dto/post-poll.dto';
@@ -24,7 +25,7 @@ import {
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { CreateDraftPollDto } from './dto/create-draft-poll.dto';
 import { UserDto } from '../users/dto/user.dto';
 import { User } from '../decorators/user.decorator';
@@ -409,5 +410,17 @@ export class PollsController {
       res.download(path.join(__dirname, '../../', fileName), fileName),
     );
     this.filesService.deleteFile(fileName);
+  }
+
+  @ApiBody({
+    schema: {
+      properties: { pollId: { description: 'number', type: 'number' } },
+    },
+  })
+  @Get(':pollId/vote-url')
+  @UseGuards(PollAuthorGuard)
+  getTokenUrl(@Req() req: Request) {
+    const poll: PollDto = req['poll'];
+    return getTokenUrl(poll.token, PathUrl.VOTE);
   }
 }
