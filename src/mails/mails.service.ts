@@ -36,15 +36,11 @@ export class MailsService {
     }`;
     poll.invitedUsers.forEach(
       async (receiver) =>
-        await this.sendEmailQueue.add(
-          ProcessorName.INVITATION_VOTE,
-          {
-            url,
-            receiver,
-            poll,
-          },
-          { removeOnComplete: true },
-        ),
+        await this.sendEmailQueue.add(ProcessorName.INVITATION_VOTE, {
+          url,
+          receiver,
+          poll,
+        }),
     );
   }
 
