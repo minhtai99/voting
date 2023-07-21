@@ -34,10 +34,12 @@ import {
   createJWT,
   verifyToken,
 } from './../helpers/token.helper';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -70,10 +72,10 @@ export class AuthService {
       email: foundUser.email,
     };
 
-    const accessToken = createJWT(payload, TokenType.ACCESS);
+    const accessToken = createJWT(this.jwtService, payload, TokenType.ACCESS);
     let refreshToken: string = null;
     if (isRemember) {
-      refreshToken = createJWT(payload, TokenType.REFRESH);
+      refreshToken = createJWT(this.jwtService, payload, TokenType.REFRESH);
       await this.usersService.updateRefreshTokenHash(
         foundUser.id,
         refreshToken,
@@ -100,7 +102,11 @@ export class AuthService {
       throw new UnauthorizedException(MSG_INVALID_TOKEN);
     }
 
-    const payload = await verifyToken(refreshToken, TokenType.REFRESH);
+    const payload = await verifyToken(
+      this.jwtService,
+      refreshToken,
+      TokenType.REFRESH,
+    );
 
     const foundUser = await this.getUser(payload.email);
 
@@ -116,8 +122,16 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const newAccessToken = createJWT(jwtPayload, TokenType.ACCESS);
-    const newRefreshToken = createJWT(jwtPayload, TokenType.REFRESH);
+    const newAccessToken = createJWT(
+      this.jwtService,
+      jwtPayload,
+      TokenType.ACCESS,
+    );
+    const newRefreshToken = createJWT(
+      this.jwtService,
+      jwtPayload,
+      TokenType.REFRESH,
+    );
 
     await this.usersService.updateRefreshTokenHash(
       foundUser.id,
@@ -138,7 +152,11 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const resetPassJwt = createJWT(payload, TokenType.RESET_PASS);
+    const resetPassJwt = createJWT(
+      this.jwtService,
+      payload,
+      TokenType.RESET_PASS,
+    );
     await this.usersService.updateResetPasswordHash(foundUser.id, resetPassJwt);
     const forgotPassPayload: MailForgotPassPayload = {
       receiver: foundUser,
@@ -154,7 +172,11 @@ export class AuthService {
 
   async resetPassword(resetPassDto: ResetPassDto) {
     const { newPassword, token } = resetPassDto;
-    const payload = await verifyToken(token, TokenType.RESET_PASS);
+    const payload = await verifyToken(
+      this.jwtService,
+      token,
+      TokenType.RESET_PASS,
+    );
 
     const foundUser = await this.getUser(payload.email);
 

@@ -10,10 +10,14 @@ import {
 import { Observable } from 'rxjs';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { TokenType, verifyToken } from './../helpers/token.helper';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class VoteGuard implements CanActivate {
-  constructor(private readonly pollsService: PollsService) {}
+  constructor(
+    private readonly pollsService: PollsService,
+    private readonly jwtService: JwtService,
+  ) {}
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
@@ -29,6 +33,7 @@ export class VoteGuard implements CanActivate {
   async validated(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
     const payload = await verifyToken(
+      this.jwtService,
       request.body.token,
       TokenType.POLL_PERMISSION,
     );

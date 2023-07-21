@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 const configService = new ConfigService();
-const jwtService = new JwtService();
 
 export interface JwtPayload {
   id?: number;
@@ -31,11 +30,15 @@ export const getTokenUrl = (token: string, path: PathUrl) => {
   return `${process.env.FRONTEND_URL}/${path}?token=${token}`;
 };
 
-export const createPollToken = (pollId: number) => {
-  return createJWT({ pollId }, TokenType.POLL_PERMISSION);
+export const createPollToken = (jwtService: JwtService, pollId: number) => {
+  return createJWT(jwtService, { pollId }, TokenType.POLL_PERMISSION);
 };
 
-export const createJWT = (payload: JwtPayload, typeToken: TokenType) => {
+export const createJWT = (
+  jwtService: JwtService,
+  payload: JwtPayload,
+  typeToken: TokenType,
+) => {
   try {
     if (configService.get(`EXPIRE_${typeToken}_JWT`)) {
       return jwtService.sign(payload, {
@@ -52,7 +55,11 @@ export const createJWT = (payload: JwtPayload, typeToken: TokenType) => {
   }
 };
 
-export const verifyToken = async (token: string, typeToken: TokenType) => {
+export const verifyToken = async (
+  jwtService: JwtService,
+  token: string,
+  typeToken: TokenType,
+) => {
   try {
     return await jwtService.verify(token, {
       secret: configService.get(`SECRET_${typeToken}_JWT`),

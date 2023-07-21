@@ -8,6 +8,7 @@ import { FilesService } from '../files/files.service';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 import { ProcessorName } from './mails.enum';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class MailsService {
@@ -15,6 +16,7 @@ export class MailsService {
     private readonly pollsService: PollsService,
     private readonly usersService: UsersService,
     private readonly filesService: FilesService,
+    private readonly jwtService: JwtService,
     @InjectQueue('send-email') private readonly sendEmailQueue: Queue,
   ) {}
 
@@ -28,7 +30,7 @@ export class MailsService {
 
   async sendEmailStartedPoll(pollId: number) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const token = createPollToken(poll.id);
+    const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
     poll.invitedUsers.forEach(
       async (receiver) =>
@@ -42,7 +44,7 @@ export class MailsService {
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const token = createPollToken(poll.id);
+    const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
 
     poll.invitedUsers.forEach(async (receiver) => {
@@ -85,7 +87,7 @@ export class MailsService {
     if (voteReminderList.length === 0) return;
 
     const poll = voteReminderList[0].invitedPolls[0];
-    const token = createPollToken(poll.id);
+    const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
     voteReminderList.forEach(
       async (receiver) =>

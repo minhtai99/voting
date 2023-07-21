@@ -1,9 +1,4 @@
-import {
-  PathUrl,
-  TokenType,
-  createJWT,
-  getTokenUrl,
-} from '../helpers/token.helper';
+import { PathUrl, createPollToken, getTokenUrl } from '../helpers/token.helper';
 import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { InviteUsersDto } from './dto/invite-user.dto';
 import { PostPollDto } from './dto/post-poll.dto';
@@ -58,6 +53,7 @@ import { SaveDraftPollDto } from './dto/post-draft-poll.dto';
 import { Request, Response } from 'express';
 import { EditPollDto } from './dto/edit-poll.dto';
 import path from 'path';
+import { JwtService } from '@nestjs/jwt';
 
 @UseGuards(JwtAuthGuard)
 @Controller('polls')
@@ -67,6 +63,7 @@ export class PollsController {
     private readonly pollsService: PollsService,
     private readonly eventEmitter: EventEmitter2,
     private readonly filesService: FilesService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post()
@@ -426,7 +423,7 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   getTokenUrl(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    const token = createJWT({ pollId: poll.id }, TokenType.POLL_PERMISSION);
+    const token = createPollToken(this.jwtService, poll.id);
     return { voteUrl: getTokenUrl(token, PathUrl.VOTE) };
   }
 }
