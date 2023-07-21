@@ -52,7 +52,6 @@ model Poll {
   endDate       DateTime?
   isPublic      Boolean
   status        PollStatus
-  token         String?
 
   answer        AnswerOption[] @relation("PollResult")
   invitedUsers  User[]         @relation("InvitationToPoll")

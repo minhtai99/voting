@@ -25,7 +25,7 @@ export class PollAuthorGuard implements CanActivate {
   }
   async checkAuthor(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    if (!request.body.pollId || !request.params.pollId) {
+    if (!request.body.pollId && !request.params.pollId) {
       throw new BadRequestException(MSG_POLL_ID_NOT_EMPTY);
     }
 

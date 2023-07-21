@@ -1,3 +1,5 @@
+import { TokenType } from 'src/auth/auth.enum';
+import { AuthService } from 'src/auth/auth.service';
 import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
 import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { InviteUsersDto } from './dto/invite-user.dto';
@@ -62,6 +64,7 @@ export class PollsController {
     private readonly pollsService: PollsService,
     private readonly eventEmitter: EventEmitter2,
     private readonly filesService: FilesService,
+    private readonly authService: AuthService,
   ) {}
 
   @Post()
@@ -421,6 +424,10 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   getTokenUrl(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    return { voteUrl: getTokenUrl(poll.token, PathUrl.VOTE) };
+    const token = this.authService.createJWT(
+      { pollId: poll.id },
+      TokenType.POLL_PERMISSION,
+    );
+    return { voteUrl: getTokenUrl(token, PathUrl.VOTE) };
   }
 }

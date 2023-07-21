@@ -1,9 +1,10 @@
+import { AuthService } from 'src/auth/auth.service';
+import { TokenType } from 'src/auth/auth.enum';
 import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
 import { UsersService } from './../users/users.service';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { UserDto } from '../users/dto/user.dto';
 import { FilesService } from '../files/files.service';
 import { Queue } from 'bull';
@@ -13,10 +14,10 @@ import { ProcessorName } from './mails.enum';
 @Injectable()
 export class MailsService {
   constructor(
-    private readonly configService: ConfigService,
     private readonly pollsService: PollsService,
     private readonly usersService: UsersService,
     private readonly filesService: FilesService,
+    private readonly authService: AuthService,
     @InjectQueue('send-email') private readonly sendEmailQueue: Queue,
   ) {}
 
@@ -30,7 +31,11 @@ export class MailsService {
 
   async sendEmailStartedPoll(pollId: number) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const url = getTokenUrl(poll.token, PathUrl.VOTE);
+    const token = this.authService.createJWT(
+      { pollId: poll.id },
+      TokenType.POLL_PERMISSION,
+    );
+    const url = getTokenUrl(token, PathUrl.VOTE);
     poll.invitedUsers.forEach(
       async (receiver) =>
         await this.sendEmailQueue.add(ProcessorName.INVITATION_VOTE, {
@@ -43,7 +48,11 @@ export class MailsService {
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const url = getTokenUrl(poll.token, PathUrl.VOTE);
+    const token = this.authService.createJWT(
+      { pollId: poll.id },
+      TokenType.POLL_PERMISSION,
+    );
+    const url = getTokenUrl(token, PathUrl.VOTE);
 
     poll.invitedUsers.forEach(async (receiver) => {
       if (newInvitedUsers.some((userId) => userId === receiver.id)) {
