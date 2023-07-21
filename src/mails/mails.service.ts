@@ -1,6 +1,4 @@
-import { AuthService } from 'src/auth/auth.service';
-import { TokenType } from 'src/auth/auth.enum';
-import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
+import { PathUrl, createPollToken, getTokenUrl } from '../helpers/token.helper';
 import { UsersService } from './../users/users.service';
 import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
@@ -17,7 +15,6 @@ export class MailsService {
     private readonly pollsService: PollsService,
     private readonly usersService: UsersService,
     private readonly filesService: FilesService,
-    private readonly authService: AuthService,
     @InjectQueue('send-email') private readonly sendEmailQueue: Queue,
   ) {}
 
@@ -31,10 +28,7 @@ export class MailsService {
 
   async sendEmailStartedPoll(pollId: number) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const token = this.authService.createJWT(
-      { pollId: poll.id },
-      TokenType.POLL_PERMISSION,
-    );
+    const token = createPollToken(poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
     poll.invitedUsers.forEach(
       async (receiver) =>
@@ -48,10 +42,7 @@ export class MailsService {
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
     const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const token = this.authService.createJWT(
-      { pollId: poll.id },
-      TokenType.POLL_PERMISSION,
-    );
+    const token = createPollToken(poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
 
     poll.invitedUsers.forEach(async (receiver) => {
@@ -94,7 +85,8 @@ export class MailsService {
     if (voteReminderList.length === 0) return;
 
     const poll = voteReminderList[0].invitedPolls[0];
-    const url = getTokenUrl(poll.token, PathUrl.VOTE);
+    const token = createPollToken(poll.id);
+    const url = getTokenUrl(token, PathUrl.VOTE);
     voteReminderList.forEach(
       async (receiver) =>
         await this.sendEmailQueue.add(ProcessorName.VOTE_REMINDER, {

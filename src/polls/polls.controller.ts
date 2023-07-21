@@ -1,11 +1,14 @@
-import { TokenType } from 'src/auth/auth.enum';
-import { AuthService } from 'src/auth/auth.service';
-import { PathUrl, getTokenUrl } from './../helpers/token-url.helper';
+import {
+  PathUrl,
+  TokenType,
+  createJWT,
+  getTokenUrl,
+} from '../helpers/token.helper';
 import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { InviteUsersDto } from './dto/invite-user.dto';
 import { PostPollDto } from './dto/post-poll.dto';
 import { VoteGuard } from './../votes/vote.guard';
-import { MailInvitationVote } from './../mails/interfaces/send-mail.interface';
+import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
 import { MailEvent } from './../mails/mails.enum';
 import {
   Controller,
@@ -64,7 +67,6 @@ export class PollsController {
     private readonly pollsService: PollsService,
     private readonly eventEmitter: EventEmitter2,
     private readonly filesService: FilesService,
-    private readonly authService: AuthService,
   ) {}
 
   @Post()
@@ -424,10 +426,7 @@ export class PollsController {
   @UseGuards(PollAuthorGuard)
   getTokenUrl(@Req() req: Request) {
     const poll: PollDto = req['poll'];
-    const token = this.authService.createJWT(
-      { pollId: poll.id },
-      TokenType.POLL_PERMISSION,
-    );
+    const token = createJWT({ pollId: poll.id }, TokenType.POLL_PERMISSION);
     return { voteUrl: getTokenUrl(token, PathUrl.VOTE) };
   }
 }

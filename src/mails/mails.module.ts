@@ -1,7 +1,7 @@
 import { PollsModule } from './../polls/polls.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { Global, Module, forwardRef } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { MailsService } from './mails.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
@@ -10,7 +10,6 @@ import { FilesModule } from '../files/files.module';
 import { UsersModule } from 'src/users/users.module';
 import { BullModule } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';
-import { AuthModule } from 'src/auth/auth.module';
 
 @Global()
 @Module({
@@ -48,7 +47,6 @@ import { AuthModule } from 'src/auth/auth.module';
     BullModule.registerQueue({
       name: 'send-email',
     }),
-    forwardRef(() => AuthModule),
   ],
   controllers: [],
   providers: [MailsService, MailListener, MailProcessor],

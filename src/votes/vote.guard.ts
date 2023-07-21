@@ -1,7 +1,5 @@
 import { MSG_POLL_NOT_FOUND } from './../constants/message.constant';
-import { AuthService } from './../auth/auth.service';
 import { PollsService } from './../polls/polls.service';
-import { TokenType } from './../auth/auth.enum';
 import {
   Injectable,
   CanActivate,
@@ -11,13 +9,11 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PollDto } from 'src/polls/dto/poll.dto';
+import { TokenType, verifyToken } from './../helpers/token.helper';
 
 @Injectable()
 export class VoteGuard implements CanActivate {
-  constructor(
-    private readonly pollsService: PollsService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly pollsService: PollsService) {}
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
@@ -32,7 +28,7 @@ export class VoteGuard implements CanActivate {
 
   async validated(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    const payload = await this.authService.verifyToken(
+    const payload = await verifyToken(
       request.body.token,
       TokenType.POLL_PERMISSION,
     );
