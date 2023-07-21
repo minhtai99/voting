@@ -73,11 +73,18 @@ export class VotesService extends CrudService {
   async getVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
     const args = {
-      where: { participantId: user.id, pollId: poll.id },
+      where: {
+        pollId_participantId: {
+          participantId: user.id,
+          pollId: poll.id,
+        },
+      },
       include: {
         answers: true,
         poll: {
-          include: { answerOptions: true },
+          include: {
+            answerOptions: true,
+          },
         },
       },
     };
