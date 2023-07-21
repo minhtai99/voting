@@ -1,7 +1,6 @@
 import { POLL_CACHE_KEY } from '../constants/cache.constant';
 import { MailEvent } from './../mails/mails.enum';
 import { FilesService } from './../files/files.service';
-import { AuthService } from 'src/auth/auth.service';
 import {
   BadRequestException,
   Injectable,
@@ -27,7 +26,6 @@ import { UsersService } from '../users/users.service';
 import { FilterPollDto } from './dto/filter-poll.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
 import * as fs from 'fs';
-import { TokenType } from 'src/auth/auth.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailInvitationVote } from '../mails/interfaces/send-mail.interface';
 import { AnswerOptionDto } from '../answer-option/dto/answer-option.dto';
@@ -42,7 +40,6 @@ export class PollsService extends CrudService {
   constructor(
     protected readonly prisma: PrismaService,
     private readonly usersService: UsersService,
-    private readonly authService: AuthService,
     private readonly answerOptionService: AnswerOptionService,
     @Inject(forwardRef(() => FilesService))
     private readonly filesService: FilesService,
@@ -83,10 +80,7 @@ export class PollsService extends CrudService {
         invitedUsers: true,
       },
     };
-    const poll = await this.createData(args);
-
-    poll.token = await this.updatePollToken(poll.id);
-    return poll;
+    return await this.createData(args);
   }
 
   async updatePoll(
@@ -416,21 +410,6 @@ export class PollsService extends CrudService {
         notIn: ['draft', 'pending'],
       },
     };
-  }
-
-  async updatePollToken(pollId: number) {
-    const token = this.authService.createJWT(
-      { pollId },
-      TokenType.POLL_PERMISSION,
-    );
-    const args = {
-      where: { id: pollId },
-      data: {
-        token,
-      },
-    };
-    await this.updateData(args);
-    return token;
   }
 
   async updatePollResultAnswer(pollId: number) {

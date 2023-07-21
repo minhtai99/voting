@@ -1,5 +1,4 @@
 import { VOTE_CACHE_KEY } from '../constants/cache.constant';
-import { PollsService } from './../polls/polls.service';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
   MSG_POLL_STATUS_MUST_ONGOING,
@@ -22,7 +21,6 @@ import { CrudService } from 'src/crud/crud.service';
 export class VotesService extends CrudService {
   constructor(
     protected readonly prisma: PrismaService,
-    private readonly pollsService: PollsService,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
   ) {
     super(cacheManager, prisma, VOTE_CACHE_KEY);

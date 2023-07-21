@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { VotesController } from './votes.controller';
 import { PollsModule } from '../polls/polls.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [PollsModule, AuthModule],
+  imports: [PollsModule, JwtModule.register({})],
   controllers: [VotesController],
   providers: [VotesService],
 })

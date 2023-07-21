@@ -2,7 +2,7 @@ import { PollsService } from './../polls/polls.service';
 import {
   SummaryVoteExcel,
   VoteExcel,
-} from './../mails/interfaces/send-mail.interface';
+} from '../mails/interfaces/send-mail.interface';
 import { diskStorage } from 'multer';
 import { v4 as uuid } from 'uuid';
 import {

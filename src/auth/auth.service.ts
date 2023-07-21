@@ -7,13 +7,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { LoginAuthDto } from './dto/login-auth.dto';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { compareHashedData } from '../helpers/hash.helper';
-import { TokenType } from './auth.enum';
 import {
   MSG_EMAIL_ALREADY_EXISTS,
-  MSG_ERROR_CREATE_TOKEN,
   MSG_INVALID_TOKEN,
   MSG_LOGIN_SUCCESSFUL,
   MSG_LOGOUT_SUCCESSFUL,
@@ -32,19 +28,19 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResetPassDto } from './dto/reset-password.dto';
 import { MailForgotPassPayload } from '../mails/interfaces/send-mail.interface';
 import { Request } from 'express';
-
-interface JwtPayload {
-  id?: number;
-  email?: string;
-  pollId?: number;
-}
+import {
+  JwtPayload,
+  TokenType,
+  createJWT,
+  verifyToken,
+} from './../helpers/token.helper';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
   async register(register: CreateUserDto) {
@@ -76,10 +72,10 @@ export class AuthService {
       email: foundUser.email,
     };
 
-    const accessToken = this.createJWT(payload, TokenType.ACCESS);
+    const accessToken = createJWT(this.jwtService, payload, TokenType.ACCESS);
     let refreshToken: string = null;
     if (isRemember) {
-      refreshToken = this.createJWT(payload, TokenType.REFRESH);
+      refreshToken = createJWT(this.jwtService, payload, TokenType.REFRESH);
       await this.usersService.updateRefreshTokenHash(
         foundUser.id,
         refreshToken,
@@ -106,7 +102,11 @@ export class AuthService {
       throw new UnauthorizedException(MSG_INVALID_TOKEN);
     }
 
-    const payload = await this.verifyToken(refreshToken, TokenType.REFRESH);
+    const payload = await verifyToken(
+      this.jwtService,
+      refreshToken,
+      TokenType.REFRESH,
+    );
 
     const foundUser = await this.getUser(payload.email);
 
@@ -122,8 +122,16 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const newAccessToken = this.createJWT(jwtPayload, TokenType.ACCESS);
-    const newRefreshToken = this.createJWT(jwtPayload, TokenType.REFRESH);
+    const newAccessToken = createJWT(
+      this.jwtService,
+      jwtPayload,
+      TokenType.ACCESS,
+    );
+    const newRefreshToken = createJWT(
+      this.jwtService,
+      jwtPayload,
+      TokenType.REFRESH,
+    );
 
     await this.usersService.updateRefreshTokenHash(
       foundUser.id,
@@ -144,7 +152,11 @@ export class AuthService {
       id: foundUser.id,
       email: foundUser.email,
     };
-    const resetPassJwt = this.createJWT(payload, TokenType.RESET_PASS);
+    const resetPassJwt = createJWT(
+      this.jwtService,
+      payload,
+      TokenType.RESET_PASS,
+    );
     await this.usersService.updateResetPasswordHash(foundUser.id, resetPassJwt);
     const forgotPassPayload: MailForgotPassPayload = {
       receiver: foundUser,
@@ -160,7 +172,11 @@ export class AuthService {
 
   async resetPassword(resetPassDto: ResetPassDto) {
     const { newPassword, token } = resetPassDto;
-    const payload = await this.verifyToken(token, TokenType.RESET_PASS);
+    const payload = await verifyToken(
+      this.jwtService,
+      token,
+      TokenType.RESET_PASS,
+    );
 
     const foundUser = await this.getUser(payload.email);
 
@@ -174,33 +190,6 @@ export class AuthService {
 
     await this.usersService.updatePassword(foundUser.id, newPassword);
     return { message: MSG_PASSWORD_RESET_SUCCESSFUL };
-  }
-
-  async verifyToken(token: string, typeToken: TokenType) {
-    try {
-      return await this.jwtService.verify(token, {
-        secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-      });
-    } catch {
-      throw new BadRequestException(MSG_INVALID_TOKEN);
-    }
-  }
-
-  createJWT(payload: JwtPayload, typeToken: TokenType) {
-    try {
-      if (this.configService.get(`EXPIRE_${typeToken}_JWT`)) {
-        return this.jwtService.sign(payload, {
-          secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-          expiresIn: this.configService.get(`EXPIRE_${typeToken}_JWT`),
-        });
-      } else {
-        return this.jwtService.sign(payload, {
-          secret: this.configService.get(`SECRET_${typeToken}_JWT`),
-        });
-      }
-    } catch {
-      throw new BadRequestException(MSG_ERROR_CREATE_TOKEN);
-    }
   }
 
   async getUser(email: string) {

@@ -10,6 +10,7 @@ import { FilesModule } from '../files/files.module';
 import { UsersModule } from 'src/users/users.module';
 import { BullModule } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';
+import { JwtModule } from '@nestjs/jwt';
 
 @Global()
 @Module({
@@ -47,6 +48,7 @@ import { MailProcessor } from './mail.processor';
     BullModule.registerQueue({
       name: 'send-email',
     }),
+    JwtModule.register({}),
   ],
   controllers: [],
   providers: [MailsService, MailListener, MailProcessor],
