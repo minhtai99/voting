@@ -25,7 +25,7 @@ import {
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { CreateDraftPollDto } from './dto/create-draft-poll.dto';
 import { UserDto } from '../users/dto/user.dto';
 import { User } from '../decorators/user.decorator';
@@ -414,13 +414,8 @@ export class PollsController {
     this.filesService.deleteFile(fileName);
   }
 
-  @ApiBody({
-    schema: {
-      properties: { pollId: { description: 'number', type: 'number' } },
-    },
-  })
   @Get(':pollId/vote-url')
-  @UseGuards(PollAuthorGuard)
+  @UseGuards(VoteGuard)
   getTokenUrl(@Req() req: Request) {
     const poll: PollDto = req['poll'];
     const token = createPollToken(this.jwtService, poll.id);

@@ -54,6 +54,7 @@ export class VoteGuard implements CanActivate {
       if (!poll) {
         throw new NotFoundException(MSG_POLL_NOT_FOUND);
       }
+      request['poll'] = poll;
     } else {
       poll = request['poll'];
     }
@@ -64,6 +65,7 @@ export class VoteGuard implements CanActivate {
     if (!invited && request.user.id !== poll.authorId) {
       throw new ForbiddenException();
     }
+
     return true;
   }
 }
