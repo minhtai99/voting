@@ -206,7 +206,7 @@ export class PollsService extends CrudService {
         payloadInvitation,
       );
 
-      return { data: updatePoll };
+      return updatePoll;
     } catch {
       throw new NotFoundException(MSG_POLL_NOT_FOUND);
     }
