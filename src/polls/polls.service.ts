@@ -226,7 +226,7 @@ export class PollsService extends CrudService {
 
   async getPollById(pollId: number) {
     const poll: PollDto = await this.findPollById(pollId);
-    return { data: poll, token: poll.token };
+    return { data: poll };
   }
 
   async findPollById(pollId: number) {
