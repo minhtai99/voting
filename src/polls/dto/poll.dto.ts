@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Poll, PollStatus, AnswerType } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
 import { UserDto } from '../../users/dto/user.dto';
-import { Exclude, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { VoteDto } from 'src/votes/dto/vote.dto';
 
 export class PollDto implements Poll {
@@ -38,9 +38,6 @@ export class PollDto implements Poll {
 
   @ApiProperty()
   status: PollStatus;
-
-  @Exclude()
-  token: string;
 
   @ApiProperty()
   authorId: number;

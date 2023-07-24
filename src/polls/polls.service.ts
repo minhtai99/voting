@@ -580,4 +580,24 @@ export class PollsService extends CrudService {
       }
     }
   }
+
+  async findVoteByPollIdAndUserId(userId: number, pollId: number) {
+    const args = {
+      where: {
+        id: pollId,
+      },
+      include: {
+        answerOptions: true,
+        votes: {
+          include: {
+            answers: true,
+          },
+          where: {
+            participantId: userId,
+          },
+        },
+      },
+    };
+    return await this.getDataByUnique(args.where, args.include);
+  }
 }
