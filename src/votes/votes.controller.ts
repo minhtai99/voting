@@ -22,6 +22,7 @@ import { User } from '../decorators/user.decorator';
 import { VoteGuard } from './vote.guard';
 import { Request } from 'express';
 import { FilterVoteDto } from './dto/filter-vote.dto';
+import { PollDto } from 'src/polls/dto/poll.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vote')
@@ -47,7 +48,7 @@ export class VotesController {
   })
   @Post('get-vote')
   @UseGuards(VoteGuard)
-  @UseInterceptors(new TransformDtoInterceptor(VoteDto))
+  @UseInterceptors(new TransformDtoInterceptor(PollDto))
   async getVote(@User() user: UserDto, @Req() req: Request) {
     try {
       return { data: await this.votesService.getVoteByPollId(user, req) };
