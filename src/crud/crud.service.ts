@@ -24,6 +24,15 @@ export class CrudService {
     });
   }
 
+  async clearCacheWithKey(cacheKey: string) {
+    const keys: string[] = await this.cacheManager.store.keys();
+    keys.forEach((key) => {
+      if (key.startsWith(cacheKey)) {
+        this.cacheManager.del(key);
+      }
+    });
+  }
+
   async getList(filterCrudDto: FilterCrudDto) {
     const cacheItems = await this.cacheManager.get(
       generateKey(`${this.cacheKey}-list`, filterCrudDto),

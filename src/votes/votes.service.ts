@@ -1,4 +1,5 @@
-import { VOTE_CACHE_KEY } from '../constants/cache.constant';
+import { PollsService } from './../polls/polls.service';
+import { POLL_CACHE_KEY, VOTE_CACHE_KEY } from '../constants/cache.constant';
 import {
   MSG_DELETE_VOTE_SUCCESSFUL,
   MSG_POLL_STATUS_MUST_ONGOING,
@@ -21,6 +22,7 @@ import { CrudService } from 'src/crud/crud.service';
 export class VotesService extends CrudService {
   constructor(
     protected readonly prisma: PrismaService,
+    protected readonly pollsService: PollsService,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
   ) {
     super(cacheManager, prisma, VOTE_CACHE_KEY);
@@ -64,29 +66,13 @@ export class VotesService extends CrudService {
       },
     };
     const vote = await this.upsertData(args);
-
+    await this.clearCacheWithKey(POLL_CACHE_KEY);
     return { message: MSG_SUCCESSFUL_VOTE_CREATION, data: vote };
   }
 
   async getVoteByPollId(user: UserDto, req: Request) {
     const poll: PollDto = req['poll'];
-    const args = {
-      where: {
-        pollId_participantId: {
-          participantId: user.id,
-          pollId: poll.id,
-        },
-      },
-      include: {
-        answers: true,
-        poll: {
-          include: {
-            answerOptions: true,
-          },
-        },
-      },
-    };
-    return await this.getDataByUnique(args.where, args.include);
+    return await this.pollsService.findVoteByPollIdAndUserId(user.id, poll.id);
   }
 
   async getVotingList(filterVoteDto: FilterVoteDto) {
