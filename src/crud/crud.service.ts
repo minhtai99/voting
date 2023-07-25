@@ -85,12 +85,30 @@ export class CrudService {
 
   async getDataByUnique(where: any, include?: any) {
     const cacheItem = await this.cacheManager.get(
-      generateKey(this.cacheKey, where),
+      generateKey(`${this.cacheKey}-many`, where),
     );
     if (!!cacheItem) {
       return cacheItem;
     }
     const data = await this.module.findUnique({
+      where,
+      include,
+    });
+    await this.cacheManager.set(
+      generateKey(`${this.cacheKey}-many`, where),
+      data,
+    );
+    return data;
+  }
+
+  async getManyData(where: any, include?: any) {
+    const cacheItem = await this.cacheManager.get(
+      generateKey(this.cacheKey, where),
+    );
+    if (!!cacheItem) {
+      return cacheItem;
+    }
+    const data = await this.module.findMany({
       where,
       include,
     });

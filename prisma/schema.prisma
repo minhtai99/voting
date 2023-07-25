@@ -34,9 +34,11 @@ model User {
   resetPasswordHash String?
   avatarUrl         String?
 
-  invitedPolls Poll[] @relation("InvitationToPoll")
-  createdPolls Poll[]
-  createdVotes Vote[]
+  invitedPolls  Poll[]  @relation("InvitationToPoll")
+  groups        Group[] @relation("UserGroup")
+  createdGroups Group[]
+  createdPolls  Poll[]
+  createdVotes  Vote[]
 }
 
 model Poll {
@@ -89,4 +91,16 @@ model Vote {
   participantId Int
 
   @@unique([pollId, participantId])
+}
+
+model Group {
+  id        Int      @id @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  name      String @unique
+
+  members   User[] @relation("UserGroup")
+  creator   User   @relation(fields: [creatorId], references: [id])
+  creatorId Int
 }
