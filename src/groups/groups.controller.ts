@@ -1,6 +1,4 @@
 import {
-  MSG_GROUP_NAME_ALREADY_EXISTS,
-  MSG_GROUP_NOT_FOUND,
   MSG_SUCCESSFUL_GROUP_CREATION,
   MSG_UPDATE_SUCCESSFUL,
 } from './../constants/message.constant';
@@ -9,13 +7,11 @@ import { JwtAuthGuard } from './../auth/jwt.guard';
 import { UserDto } from './../users/dto/user.dto';
 import { User } from './../decorators/user.decorator';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpException,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -40,14 +36,10 @@ export class GroupsController {
     @User() user: UserDto,
     @Body() createGroupDto: CreateGroupDto,
   ) {
-    try {
-      return {
-        message: MSG_SUCCESSFUL_GROUP_CREATION,
-        data: await this.groupsService.createGroup(user.id, createGroupDto),
-      };
-    } catch {
-      throw new BadRequestException(MSG_GROUP_NAME_ALREADY_EXISTS);
-    }
+    return {
+      data: await this.groupsService.createGroup(user.id, createGroupDto),
+      message: MSG_SUCCESSFUL_GROUP_CREATION,
+    };
   }
 
   @Patch()
@@ -55,20 +47,16 @@ export class GroupsController {
   @UseInterceptors(new TransformDtoInterceptor(GroupDto))
   async updateGroup(@Body() updateGroupDto: UpdateGroupDto) {
     return {
-      message: MSG_UPDATE_SUCCESSFUL,
       data: await this.groupsService.updateGroup(updateGroupDto),
+      message: MSG_UPDATE_SUCCESSFUL,
     };
   }
 
   @Get()
   @UseInterceptors(new TransformDtoInterceptor(GroupDto))
   async getGroupList() {
-    const groups = await this.groupsService.getGroupList();
-    if (groups.length === 0) {
-      throw new NotFoundException(MSG_GROUP_NOT_FOUND);
-    }
     return {
-      data: groups,
+      data: await this.groupsService.getGroupList(),
     };
   }
 

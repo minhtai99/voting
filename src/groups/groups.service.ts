@@ -1,8 +1,11 @@
-import { MSG_DELETE_GROUP_SUCCESSFUL } from './../constants/message.constant';
+import {
+  MSG_DELETE_GROUP_SUCCESSFUL,
+  MSG_GROUP_NAME_ALREADY_EXISTS,
+} from './../constants/message.constant';
 import { CrudService } from './../crud/crud.service';
 import { GROUP_CACHE_KEY } from './../constants/cache.constant';
 import { PrismaService } from './../prisma/prisma.service';
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -18,6 +21,13 @@ export class GroupsService extends CrudService {
   }
 
   async createGroup(userId: number, createGroupDto: CreateGroupDto) {
+    const group = await this.getDataByUnique({
+      name: createGroupDto.groupName,
+    });
+    if (group) {
+      throw new BadRequestException(MSG_GROUP_NAME_ALREADY_EXISTS);
+    }
+
     const args = {
       data: {
         creator: { connect: { id: userId } },
