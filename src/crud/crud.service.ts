@@ -85,7 +85,7 @@ export class CrudService {
 
   async getDataByUnique(where: any, include?: any) {
     const cacheItem = await this.cacheManager.get(
-      generateKey(`${this.cacheKey}-many`, where),
+      generateKey(this.cacheKey, where),
     );
     if (!!cacheItem) {
       return cacheItem;
@@ -94,16 +94,13 @@ export class CrudService {
       where,
       include,
     });
-    await this.cacheManager.set(
-      generateKey(`${this.cacheKey}-many`, where),
-      data,
-    );
+    await this.cacheManager.set(generateKey(this.cacheKey, where), data);
     return data;
   }
 
   async getManyData(where: any, include?: any) {
     const cacheItem = await this.cacheManager.get(
-      generateKey(this.cacheKey, where),
+      generateKey(`${this.cacheKey}-many`, where),
     );
     if (!!cacheItem) {
       return cacheItem;
@@ -112,7 +109,10 @@ export class CrudService {
       where,
       include,
     });
-    await this.cacheManager.set(generateKey(this.cacheKey, where), data);
+    await this.cacheManager.set(
+      generateKey(`${this.cacheKey}-many`, where),
+      data,
+    );
     return data;
   }
 
