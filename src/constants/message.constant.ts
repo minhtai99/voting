@@ -13,6 +13,8 @@ export const MSG_SAVE_DRAFT_SUCCESSFUL = 'Save draft successfully';
 export const MSG_DELETE_VOTE_SUCCESSFUL = 'Deleted vote successfully';
 export const MSG_SUCCESSFUL_VOTE_CREATION = 'Voted successfully!';
 export const MSG_DELETE_POLL_SUCCESSFUL = 'Deleted poll successfully';
+export const MSG_DELETE_GROUP_SUCCESSFUL = 'Deleted group successfully';
+export const MSG_SUCCESSFUL_GROUP_CREATION = 'Group created successfully!';
 //////    Error message    //////
 export const MSG_TOKEN_DOES_NOT_MATCH = 'Token does not match';
 export const MSG_INVALID_TOKEN = 'Invalid token';
@@ -40,7 +42,7 @@ export const MSG_VOTE_NOT_FOUND = 'Vote is not found';
 // POLL API
 export const MSG_POLL_ID_NOT_EMPTY = 'PollId cannot be empty';
 export const MSG_POLL_NOT_FOUND = 'Poll is not found';
-export const MSG_USER_NOT_AUTHOR = 'You are not the author of this poll';
+export const MSG_USER_NOT_AUTHOR = 'You are not the author';
 export const MSG_ERROR_SEND_MAIL_POLL =
   'Poll Status are not Ongoing or Completed';
 export const MSG_POLL_STATUS_MUST_ONGOING = 'Poll status must be Ongoing';
@@ -51,3 +53,7 @@ export const MSG_END_DATE_GREATER_THAN_START_DATE =
   'EndDate must be greater than StartDate';
 export const MSG_POLL_STATUS_NOT_ONGOING = 'Poll Status must not be Ongoing';
 export const MSG_POLL_STATUS_MUST_COMPLETED = 'Poll Status must be Completed';
+// GROUP API
+export const MSG_GROUP_NOT_FOUND = 'Group is not found';
+export const MSG_GROUP_NAME_ALREADY_EXISTS = 'Group name already exists';
+export const MSG_GROUP_ID_NOT_EMPTY = 'GroupId cannot be empty';

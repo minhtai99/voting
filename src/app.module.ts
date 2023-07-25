@@ -16,6 +16,7 @@ import { VotesModule } from './votes/votes.module';
 import { AnswerOptionModule } from './answer-option/answer-option.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { BullModule } from '@nestjs/bull';
       }),
       inject: [ConfigService],
     }),
+    GroupsModule,
   ],
   controllers: [],
   providers: [
