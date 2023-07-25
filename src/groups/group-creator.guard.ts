@@ -25,17 +25,13 @@ export class GroupCreatorGuard implements CanActivate {
   }
   async checkCreator(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    if (!request.body.groupId && !request.params.groupId) {
+    if (!request.params.groupId) {
       throw new BadRequestException(MSG_GROUP_ID_NOT_EMPTY);
     }
 
-    let group: GroupDto;
-    if (isNaN(+request.params.groupId) || !request.params.groupId) {
-      group = await this.groupsService.findGroupById(+request.body.groupId);
-    } else {
-      group = await this.groupsService.findGroupById(+request.params.groupId);
-    }
-
+    const group: GroupDto = await this.groupsService.findGroupById(
+      +request.params.groupId,
+    );
     if (!group) {
       throw new NotFoundException(MSG_GROUP_NOT_FOUND);
     }

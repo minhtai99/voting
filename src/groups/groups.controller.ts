@@ -36,19 +36,24 @@ export class GroupsController {
     @User() user: UserDto,
     @Body() createGroupDto: CreateGroupDto,
   ) {
+    const newGroup = await this.groupsService.createGroup(
+      user.id,
+      createGroupDto,
+    );
     return {
-      data: await this.groupsService.createGroup(user.id, createGroupDto),
       message: MSG_SUCCESSFUL_GROUP_CREATION,
+      data: newGroup,
     };
   }
 
-  @Patch()
+  @Patch(':groupId')
   @UseGuards(GroupCreatorGuard)
   @UseInterceptors(new TransformDtoInterceptor(GroupDto))
   async updateGroup(@Body() updateGroupDto: UpdateGroupDto) {
+    const updatedGroup = await this.groupsService.updateGroup(updateGroupDto);
     return {
-      data: await this.groupsService.updateGroup(updateGroupDto),
       message: MSG_UPDATE_SUCCESSFUL,
+      data: updatedGroup,
     };
   }
 
