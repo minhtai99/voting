@@ -79,4 +79,11 @@ export class CreatePollDto {
   @IsOptional()
   @ApiProperty({ required: false, type: [RequestAnswerOption] })
   answerOptions?: RequestAnswerOption[] = [];
+
+  @IsNumber({}, { each: true })
+  @IsArray()
+  @Transform((item) => item.value.map((v) => Number(v)))
+  @IsOptional()
+  @ApiProperty({ required: false, type: [Number] })
+  groupList?: number[] = [];
 }

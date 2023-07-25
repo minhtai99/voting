@@ -1,3 +1,4 @@
+import { GroupsService } from './../groups/groups.service';
 import { POLL_CACHE_KEY } from '../constants/cache.constant';
 import { MailEvent } from './../mails/mails.enum';
 import { FilesService } from './../files/files.service';
@@ -34,6 +35,8 @@ import { PostPollDto } from './dto/post-poll.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CrudService } from 'src/crud/crud.service';
+import { InviteUsersDto } from './dto/invite-user.dto';
+import { GroupDto } from 'src/groups/dto/group.dto';
 
 @Injectable()
 export class PollsService extends CrudService {
@@ -45,6 +48,7 @@ export class PollsService extends CrudService {
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+    private readonly groupsService: GroupsService,
   ) {
     super(cacheManager, prisma, POLL_CACHE_KEY);
   }
@@ -181,17 +185,21 @@ export class PollsService extends CrudService {
     }
   }
 
-  async updateInvitePeople(poll: PollDto, invitedUsers: number[]) {
+  async updateInvitePeople(poll: PollDto, inviteUsersDto: InviteUsersDto) {
     try {
-      const newInvitedUsers = invitedUsers.filter((id) =>
-        poll.invitedUsers.every((user) => user.id !== id),
+      let newInvitedUsers = await this.getInvitedUsers(
+        inviteUsersDto.invitedUsers,
+        inviteUsersDto.groupList,
+      );
+      newInvitedUsers = newInvitedUsers.filter((user) =>
+        poll.invitedUsers.every((invitedUser) => invitedUser.id !== user.id),
       );
 
       const payload = {
         where: { id: poll.id },
         data: {
           invitedUsers: {
-            connect: invitedUsers.map((userId) => ({ id: userId })),
+            connect: newInvitedUsers,
           },
         },
       };
@@ -318,9 +326,10 @@ export class PollsService extends CrudService {
         return { id: user.id };
       });
     } else {
-      invitedUsers = pollDto.invitedUsers.map((userId) => {
-        return { id: userId };
-      });
+      invitedUsers = await this.getInvitedUsers(
+        pollDto.invitedUsers,
+        pollDto.groupList,
+      );
     }
 
     return {
@@ -599,5 +608,31 @@ export class PollsService extends CrudService {
       },
     };
     return await this.getDataByUnique(args.where, args.include);
+  }
+
+  async getInvitedUsers(userIdList: number[], groupIdList: number[]) {
+    let invitedUsers = [];
+    if (groupIdList.length !== 0) {
+      invitedUsers = await this.getInvitedUsersWithGroup(groupIdList);
+      userIdList.forEach((userId) => {
+        if (!invitedUsers.find((user) => user.id === userId))
+          return invitedUsers.push({ id: userId });
+      });
+    } else {
+      invitedUsers = userIdList.map((userId) => ({ id: userId }));
+    }
+    return invitedUsers;
+  }
+
+  async getInvitedUsersWithGroup(groupIdList: number[]) {
+    const invitedUsers = [];
+    for await (const groupId of groupIdList) {
+      const group: GroupDto = await this.groupsService.findGroupById(groupId);
+      group.members.forEach((member) => {
+        if (!invitedUsers.find((user) => user.id === member.id))
+          return invitedUsers.push({ id: member.id });
+      });
+    }
+    return invitedUsers;
   }
 }

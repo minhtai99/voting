@@ -6,6 +6,7 @@ import { FilesModule } from '../files/files.module';
 import { PollSchedule } from './cron/poll.cron';
 import { AnswerOptionModule } from 'src/answer-option/answer-option.module';
 import { JwtModule } from '@nestjs/jwt';
+import { GroupsModule } from 'src/groups/groups.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { JwtModule } from '@nestjs/jwt';
     forwardRef(() => FilesModule),
     JwtModule.register({}),
     AnswerOptionModule,
+    forwardRef(() => GroupsModule),
   ],
   controllers: [PollsController],
   providers: [PollsService, PollSchedule],
