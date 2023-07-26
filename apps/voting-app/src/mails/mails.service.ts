@@ -71,10 +71,10 @@ export class MailsService {
   async sendEmailPollEndedAuthor(pollId: number) {
     const poll = await this.pollsService.findPollById(pollId);
 
-    const excelFile = await this.filesService.exportDataToBuffer(pollId);
+    const fileName = await this.filesService.exportDataToFile(pollId);
 
     await this.sendEmailQueue.add(ProcessorName.POLL_ENDED_AUTHOR, {
-      excelFile,
+      fileName,
       poll,
     });
   }

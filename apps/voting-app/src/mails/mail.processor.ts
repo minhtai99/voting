@@ -78,16 +78,11 @@ export class MailProcessor {
 
   @Process(ProcessorName.POLL_ENDED_AUTHOR)
   async sendEmailPollEndedAuthor(job: Job) {
-    const { excelFile, poll } = job.data;
+    const { fileName, poll } = job.data;
     const payload: SendMail = {
       to: poll.author.email,
       subject: `[Result] ${poll.title}`,
-      attachments: [
-        {
-          filename: excelFile.filename,
-          content: excelFile.data,
-        },
-      ],
+      pathFile: `./dist/${fileName}`,
       context: {
         question: poll.question,
         author: poll.author.firstName + ' ' + poll.author.lastName,

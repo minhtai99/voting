@@ -411,10 +411,10 @@ export class PollsController {
     }
 
     const fileName = await this.filesService.exportDataToFile(poll.id);
-    await new Promise(() =>
-      res.download(path.join(__dirname, '../../', fileName), fileName),
+
+    res.download(path.join(__dirname, '../../', fileName), fileName, (error) =>
+      this.filesService.deleteFile(fileName),
     );
-    this.filesService.deleteFile(fileName);
   }
 
   @Get(':pollId/vote-url')

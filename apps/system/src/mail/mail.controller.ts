@@ -24,7 +24,7 @@ export class MailController {
 
   @EventPattern('sendMailPollEndedAuthor')
   handleSendMailEndPollAuthor(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMail(sendMailDto, './end-poll-author.hbs');
+    this.mailService.sendMailWithFile(sendMailDto, './end-poll-author.hbs');
   }
 
   @EventPattern('sendMailPollEndedParticipants')

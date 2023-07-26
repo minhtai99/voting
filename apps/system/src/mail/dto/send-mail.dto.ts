@@ -16,7 +16,8 @@ export class SendMailDto {
   @ApiProperty()
   context: any;
 
+  @IsString()
   @IsOptional()
   @ApiProperty()
-  attachments: any;
+  pathFile: string;
 }

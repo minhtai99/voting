@@ -29,5 +29,5 @@ export interface SendMail {
   to: string;
   subject: string;
   context: object;
-  attachments?: any[];
+  pathFile?: string;
 }
