@@ -14,3 +14,11 @@ export enum ProcessorName {
   POLL_ENDED_AUTHOR = 'end-poll-author',
   VOTE_REMINDER = 'vote-reminder',
 }
+
+export enum MailClientEvent {
+  SEND_MAIL_FORGOT_PASSWORD = 'sendMailForgotPass',
+  SEND_MAIL_INVITATION_VOTE = 'sendMailInvitation',
+  SEND_MAIL_POLL_ENDED_PARTICIPANT = 'sendMailPollEndedParticipants',
+  SEND_MAIL_POLL_ENDED_AUTHOR = 'sendMailPollEndedAuthor',
+  SEND_MAIL_VOTE_REMINDER = 'sendMailReminder',
+}

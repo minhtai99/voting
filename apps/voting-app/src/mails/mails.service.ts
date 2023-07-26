@@ -1,6 +1,5 @@
 import { PathUrl, createPollToken, getTokenUrl } from '../helpers/token.helper';
 import { UsersService } from './../users/users.service';
-import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
 import { Injectable } from '@nestjs/common';
 import { UserDto } from '../users/dto/user.dto';
@@ -29,7 +28,7 @@ export class MailsService {
   }
 
   async sendEmailStartedPoll(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
     const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
     poll.invitedUsers.forEach(
@@ -43,7 +42,7 @@ export class MailsService {
   }
 
   async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
     const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
 
@@ -59,7 +58,7 @@ export class MailsService {
   }
 
   async sendEmailPollEndedParticipants(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
 
     poll.votes.forEach(async (vote) => {
       await this.sendEmailQueue.add(ProcessorName.POLL_ENDED_PARTICIPANT, {
@@ -70,7 +69,7 @@ export class MailsService {
   }
 
   async sendEmailPollEndedAuthor(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
 
     const excelFile = await this.filesService.exportDataToBuffer(pollId);
 

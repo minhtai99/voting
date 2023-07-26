@@ -11,12 +11,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { AnswerType, PollStatus } from '@prisma/client';
-import { PollDto } from 'src/polls/dto/poll.dto';
+import { PollDto } from './../polls/dto/poll.dto';
 import { Request } from 'express';
 import { FilterVoteDto } from './dto/filter-vote.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { CrudService } from 'src/crud/crud.service';
+import { CrudService } from './../crud/crud.service';
 
 @Injectable()
 export class VotesService extends CrudService {

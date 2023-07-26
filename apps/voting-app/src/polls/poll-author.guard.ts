@@ -13,7 +13,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { PollDto } from './dto/poll.dto';
 
 @Injectable()
 export class PollAuthorGuard implements CanActivate {
@@ -29,7 +28,7 @@ export class PollAuthorGuard implements CanActivate {
       throw new BadRequestException(MSG_POLL_ID_NOT_EMPTY);
     }
 
-    let poll: PollDto;
+    let poll;
     if (isNaN(+request.params.pollId) || !request.params.pollId) {
       poll = await this.pollsService.findPollById(+request.body.pollId);
     } else {

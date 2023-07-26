@@ -24,3 +24,10 @@ export interface SummaryVoteExcel {
   endTime: string;
   answerType: string;
 }
+
+export interface SendMail {
+  to: string;
+  subject: string;
+  context: object;
+  attachments?: any[];
+}

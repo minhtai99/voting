@@ -20,7 +20,7 @@ import { ChangePassDto } from './dto/change-password.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { USER_CACHE_KEY } from '../constants/cache.constant';
-import { CrudService } from 'src/crud/crud.service';
+import { CrudService } from './../crud/crud.service';
 
 @Injectable()
 export class UsersService extends CrudService {

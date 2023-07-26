@@ -4,9 +4,9 @@ import { PollsController } from './polls.controller';
 import { UsersModule } from '../users/users.module';
 import { FilesModule } from '../files/files.module';
 import { PollSchedule } from './cron/poll.cron';
-import { AnswerOptionModule } from 'src/answer-option/answer-option.module';
+import { AnswerOptionModule } from './../answer-option/answer-option.module';
 import { JwtModule } from '@nestjs/jwt';
-import { GroupsModule } from 'src/groups/groups.module';
+import { GroupsModule } from './../groups/groups.module';
 
 @Module({
   imports: [

@@ -8,7 +8,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { PollDto } from 'src/polls/dto/poll.dto';
 import { TokenType, verifyToken } from './../helpers/token.helper';
 import { JwtService } from '@nestjs/jwt';
 
@@ -48,7 +47,7 @@ export class VoteGuard implements CanActivate {
 
   async checkInvited(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    let poll: PollDto;
+    let poll;
     if (request.params.pollId) {
       poll = await this.pollsService.findPollById(+request.params.pollId);
       if (!poll) {

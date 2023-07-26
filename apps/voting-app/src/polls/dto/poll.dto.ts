@@ -3,7 +3,7 @@ import { Poll, PollStatus, AnswerType } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
 import { UserDto } from '../../users/dto/user.dto';
 import { Type } from 'class-transformer';
-import { VoteDto } from 'src/votes/dto/vote.dto';
+import { VoteDto } from './../../votes/dto/vote.dto';
 
 export class PollDto implements Poll {
   @ApiProperty()
