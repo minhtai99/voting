@@ -9,26 +9,26 @@ export class MailController {
 
   @EventPattern('sendMailForgotPass')
   handleSendMailForgotPass(@Payload() sendMailDto: SendMailDto) {
-    return this.mailService.sendMail(sendMailDto, './forgot-password.hbs');
+    this.mailService.sendMail(sendMailDto, './forgot-password.hbs');
   }
 
   @EventPattern('sendMailInvitation')
   handleSendMailInvitation(@Payload() sendMailDto: SendMailDto) {
-    return this.mailService.sendMail(sendMailDto, './invitation-vote.hbs');
+    this.mailService.sendMail(sendMailDto, './invitation-vote.hbs');
   }
 
   @EventPattern('sendMailReminder')
   handleSendMailReminder(@Payload() sendMailDto: SendMailDto) {
-    return this.mailService.sendMail(sendMailDto, './vote-reminder.hbs');
+    this.mailService.sendMail(sendMailDto, './vote-reminder.hbs');
   }
 
   @EventPattern('sendMailPollEndedAuthor')
   handleSendMailEndPollAuthor(@Payload() sendMailDto: SendMailDto) {
-    return this.mailService.sendMail(sendMailDto, './end-poll-author.hbs');
+    this.mailService.sendMail(sendMailDto, './end-poll-author.hbs');
   }
 
   @EventPattern('sendMailPollEndedParticipants')
   handleSendMailEndPollParticipant(@Payload() sendMailDto: SendMailDto) {
-    return this.mailService.sendMail(sendMailDto, './end-poll-participant.hbs');
+    this.mailService.sendMail(sendMailDto, './end-poll-participant.hbs');
   }
 }
