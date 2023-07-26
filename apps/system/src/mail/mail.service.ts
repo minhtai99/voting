@@ -24,6 +24,7 @@ export class MailService {
       context: sendMailDto.context,
       attachments: [
         {
+          filename: sendMailDto.fileName,
           path: sendMailDto.pathFile,
         },
       ],

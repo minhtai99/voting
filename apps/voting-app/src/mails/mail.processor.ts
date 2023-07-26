@@ -5,6 +5,7 @@ import { AnswerType } from '@prisma/client';
 import { MailClientEvent, ProcessorName } from './mails.enum';
 import { ClientProxy } from '@nestjs/microservices';
 import { SendMail } from './interfaces/send-mail.interface';
+import { join } from 'path';
 
 @Processor('send-email')
 export class MailProcessor {
@@ -82,7 +83,8 @@ export class MailProcessor {
     const payload: SendMail = {
       to: poll.author.email,
       subject: `[Result] ${poll.title}`,
-      pathFile: `./dist/${fileName}`,
+      fileName,
+      pathFile: join(__dirname, '../../', fileName),
       context: {
         question: poll.question,
         author: poll.author.firstName + ' ' + poll.author.lastName,

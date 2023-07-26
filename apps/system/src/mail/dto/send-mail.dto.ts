@@ -19,5 +19,10 @@ export class SendMailDto {
   @IsString()
   @IsOptional()
   @ApiProperty()
+  fileName: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
   pathFile: string;
 }
