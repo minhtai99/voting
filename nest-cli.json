@@ -1,13 +1,37 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "sourceRoot": "apps/voting-app/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
       "mails/templates/**/*",
       "/uploads/**/*"
     ],
-    "watchAssets": true
+    "watchAssets": true,
+    "webpack": true,
+    "tsConfigPath": "apps/voting-app/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/voting-app",
+  "projects": {
+    "voting-app": {
+      "type": "application",
+      "root": "apps/voting-app",
+      "entryFile": "main",
+      "sourceRoot": "apps/voting-app/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/voting-app/tsconfig.app.json"
+      }
+    },
+    "system": {
+      "type": "application",
+      "root": "apps/system",
+      "entryFile": "main",
+      "sourceRoot": "apps/system/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/system/tsconfig.app.json"
+      }
+    }
   }
 }
