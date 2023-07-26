@@ -36,7 +36,6 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CrudService } from 'src/crud/crud.service';
 import { InviteUsersDto } from './dto/invite-user.dto';
-import { GroupDto } from 'src/groups/dto/group.dto';
 
 @Injectable()
 export class PollsService extends CrudService {
@@ -61,21 +60,23 @@ export class PollsService extends CrudService {
   ) {
     const { picturesUrl, backgroundUrl } =
       this.filesService.getPictureUrlAndBackgroundUrl(pictures, background);
-    const data = await this.getPrismaPollData(
+    const answerOptions = await this.getAnswerOptions(
       createPollDto,
       picturesUrl,
       backgroundUrl,
     );
+    const invitedUsers = await this.getInvitedUsers(createPollDto);
+    createPollDto = this.formatPollDto(createPollDto, backgroundUrl);
 
     const args = {
       data: {
-        ...data.payload,
+        ...createPollDto,
         author: { connect: { id: user.id } },
         answerOptions: {
-          create: data.answerOptions,
+          create: answerOptions,
         },
         invitedUsers: {
-          connect: data.invitedUsers,
+          connect: invitedUsers,
         },
       },
       include: {
@@ -95,35 +96,37 @@ export class PollsService extends CrudService {
   ) {
     const { picturesUrl, backgroundUrl } =
       this.filesService.getPictureUrlAndBackgroundUrl(pictures, background);
-    const updateData = await this.getPrismaPollData(
+    const answerOptions = await this.getAnswerOptions(
       postPollDto,
       picturesUrl,
       this.checkBackgroundUrl(postPollDto.backgroundUrl, backgroundUrl),
     );
+    const invitedUsers = await this.getInvitedUsers(postPollDto);
+    postPollDto = this.formatPollDto(postPollDto, backgroundUrl);
 
     // delete AnswerOptions
     await this.updatePollDeleteAnswerOptions(
       oldPoll,
       postPollDto,
-      updateData.answerOptions,
+      answerOptions,
     );
 
     // delete backgroundUrl and file
     await this.updatePollDeleteBackgroundUrlAndFile(
       oldPoll,
-      updateData.payload.backgroundUrl,
+      postPollDto.backgroundUrl,
     );
 
     //delete PictureUrl and files
     await this.updatePollDeletePictureUrlAndFiles(
       oldPoll,
       postPollDto,
-      updateData.answerOptions,
+      answerOptions,
     );
 
     //update AnswerOptions
     const updateAnswerOptions = [];
-    for (const answerOption of updateData.answerOptions) {
+    for (const answerOption of answerOptions) {
       if (answerOption.id) {
         updateAnswerOptions.push(
           await this.answerOptionService.updateAnswerOption(answerOption),
@@ -136,14 +139,14 @@ export class PollsService extends CrudService {
         id: oldPoll.id,
       },
       data: {
-        ...updateData.payload,
+        ...postPollDto,
         answerOptions: {
-          create: updateData.answerOptions.filter(
+          create: answerOptions.filter(
             (answerOption) => answerOption.id === undefined,
           ),
         },
         invitedUsers: {
-          set: updateData.invitedUsers,
+          set: invitedUsers,
         },
       },
       include: {
@@ -187,19 +190,27 @@ export class PollsService extends CrudService {
 
   async updateInvitePeople(poll: PollDto, inviteUsersDto: InviteUsersDto) {
     try {
-      let newInvitedUsers = await this.getInvitedUsers(
-        inviteUsersDto.invitedUsers,
-        inviteUsersDto.groupList,
+      const invitedUsers =
+        await this.getInvitedUsersWithUserIdListAndGroupIdList(
+          inviteUsersDto.invitedUsers,
+          inviteUsersDto.groupList,
+        );
+      const newInvitedUsers = invitedUsers.filter((userId) =>
+        poll.invitedUsers.every((invitedUser) => {
+          return invitedUser.id !== userId;
+        }),
       );
-      newInvitedUsers = newInvitedUsers.filter((user) =>
-        poll.invitedUsers.every((invitedUser) => invitedUser.id !== user.id),
-      );
+      if (newInvitedUsers.length === 0) {
+        return {
+          data: poll,
+        };
+      }
 
       const payload = {
         where: { id: poll.id },
         data: {
           invitedUsers: {
-            connect: newInvitedUsers,
+            connect: newInvitedUsers.map((userId: number) => ({ id: userId })),
           },
         },
       };
@@ -259,14 +270,7 @@ export class PollsService extends CrudService {
     return await this.getDataByUnique({ id: pollId }, include);
   }
 
-  async getPrismaPollData(
-    pollDto: Partial<PostPollDto>,
-    picturesUrl: string[],
-    backgroundUrl: string | null,
-  ) {
-    let answerOptions = [];
-    let invitedUsers = [];
-
+  formatPollDto(pollDto: Partial<PostPollDto>, backgroundUrl: string | null) {
     const payload = {
       title: pollDto.title,
       question: pollDto.question,
@@ -282,61 +286,7 @@ export class PollsService extends CrudService {
         (payload[key] === undefined || payload[key] === null) &&
         delete payload[key],
     );
-
-    if (pollDto.answerType !== AnswerType.input) {
-      answerOptions = pollDto.answerOptions.map(
-        (answerOption): Partial<AnswerOptionDto> => {
-          if (
-            picturesUrl[answerOption.imageIndex] === undefined &&
-            answerOption.imageIndex !== undefined &&
-            answerOption.imageIndex !== -1
-          ) {
-            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
-          }
-
-          const payload = {
-            id: answerOption.id,
-            content: answerOption.content,
-            pictureUrl:
-              answerOption.imageIndex === -1
-                ? null
-                : picturesUrl[answerOption.imageIndex],
-          };
-          Object.keys(payload).forEach(
-            (key) => payload[key] === undefined && delete payload[key],
-          );
-          return payload;
-        },
-      );
-    } else {
-      if (picturesUrl.length !== 0) {
-        picturesUrl.forEach((url) => {
-          this.filesService.deleteFile(url, 'images');
-        });
-        if (backgroundUrl) {
-          this.filesService.deleteFile(backgroundUrl, 'images');
-        }
-        throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
-      }
-    }
-
-    if (pollDto.isPublic === true) {
-      const users = await this.usersService.getAllUsers();
-      invitedUsers = users.map((user) => {
-        return { id: user.id };
-      });
-    } else {
-      invitedUsers = await this.getInvitedUsers(
-        pollDto.invitedUsers,
-        pollDto.groupList,
-      );
-    }
-
-    return {
-      payload,
-      answerOptions,
-      invitedUsers,
-    };
+    return payload;
   }
 
   async updatePollStatus(pollId: number, status: PollStatus) {
@@ -483,7 +433,7 @@ export class PollsService extends CrudService {
   async updatePollDeleteAnswerOptions(
     oldPoll: PollDto,
     postPollDto: Partial<PostPollDto>,
-    newAnswerOptions: AnswerOptionDto[],
+    newAnswerOptions: Partial<AnswerOptionDto>[],
   ) {
     if (
       oldPoll.answerOptions.length !== 0 &&
@@ -525,7 +475,7 @@ export class PollsService extends CrudService {
   async updatePollDeletePictureUrlAndFiles(
     oldPoll: PollDto,
     postPollDto: Partial<PostPollDto>,
-    newAnswerOptions: AnswerOptionDto[],
+    newAnswerOptions: Partial<AnswerOptionDto>[],
   ) {
     if (postPollDto.answerType !== AnswerType.input) {
       const arrayId = newAnswerOptions
@@ -610,29 +560,78 @@ export class PollsService extends CrudService {
     return await this.getDataByUnique(args.where, args.include);
   }
 
-  async getInvitedUsers(userIdList: number[], groupIdList: number[]) {
-    let invitedUsers = [];
-    if (groupIdList.length !== 0) {
-      invitedUsers = await this.getInvitedUsersWithGroup(groupIdList);
-      userIdList.forEach((userId) => {
-        if (!invitedUsers.find((user) => user.id === userId))
-          return invitedUsers.push({ id: userId });
-      });
-    } else {
-      invitedUsers = userIdList.map((userId) => ({ id: userId }));
+  async getInvitedUsers(pollDto: Partial<PostPollDto>) {
+    if (pollDto.isPublic === true) {
+      const users = await this.usersService.getAllUsers();
+      return users.map((user) => ({ id: user.id }));
     }
-    return invitedUsers;
+
+    const usersIdList = await this.getInvitedUsersWithUserIdListAndGroupIdList(
+      pollDto.invitedUsers,
+      pollDto.groupList,
+    );
+    return usersIdList.map((userId: number) => ({ id: userId }));
   }
 
-  async getInvitedUsersWithGroup(groupIdList: number[]) {
+  async getInvitedUsersWithUserIdListAndGroupIdList(
+    userIdList: number[] | undefined,
+    groupIdList: number[] | undefined,
+  ) {
     const invitedUsers = [];
-    for await (const groupId of groupIdList) {
-      const group: GroupDto = await this.groupsService.findGroupById(groupId);
-      group.members.forEach((member) => {
-        if (!invitedUsers.find((user) => user.id === member.id))
-          return invitedUsers.push({ id: member.id });
+    if (groupIdList && groupIdList.length !== 0) {
+      const groups = await this.groupsService.getGroupListByGroupIdList(
+        groupIdList,
+      );
+      groups.forEach((group) => {
+        group.members.forEach((member) => invitedUsers.push(member.id));
       });
     }
-    return invitedUsers;
+    if (userIdList && userIdList.length !== 0) {
+      userIdList.forEach((userId) => invitedUsers.push(userId));
+    }
+    return [...new Set(invitedUsers)] as number[];
+  }
+
+  async getAnswerOptions(
+    pollDto: Partial<PostPollDto>,
+    picturesUrl: string[],
+    backgroundUrl: string | null,
+  ) {
+    if (pollDto.answerType !== AnswerType.input) {
+      return pollDto.answerOptions.map(
+        (answerOption): Partial<AnswerOptionDto> => {
+          if (
+            picturesUrl[answerOption.imageIndex] === undefined &&
+            answerOption.imageIndex !== undefined &&
+            answerOption.imageIndex !== -1
+          ) {
+            throw new BadRequestException(MSG_ERROR_IMAGE_INDEX);
+          }
+
+          const payload: Partial<AnswerOptionDto> = {
+            id: answerOption.id,
+            content: answerOption.content,
+            pictureUrl:
+              answerOption.imageIndex === -1
+                ? null
+                : picturesUrl[answerOption.imageIndex],
+          };
+          Object.keys(payload).forEach(
+            (key) => payload[key] === undefined && delete payload[key],
+          );
+          return payload;
+        },
+      );
+    } else {
+      if (picturesUrl.length !== 0) {
+        picturesUrl.forEach((url) => {
+          this.filesService.deleteFile(url, 'images');
+        });
+        if (backgroundUrl) {
+          this.filesService.deleteFile(backgroundUrl, 'images');
+        }
+        throw new BadRequestException(MSG_INVALID_PICTURES_FIELD);
+      }
+    }
   }
 }

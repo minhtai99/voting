@@ -100,4 +100,17 @@ export class GroupsService extends CrudService {
       },
     );
   }
+
+  async getGroupListByGroupIdList(groupIdList: number[]) {
+    return await this.prisma.group.findMany({
+      where: {
+        id: {
+          in: groupIdList,
+        },
+      },
+      include: {
+        members: true,
+      },
+    });
+  }
 }
