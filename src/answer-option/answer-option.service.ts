@@ -35,7 +35,7 @@ export class AnswerOptionService {
     }
   }
 
-  async updateAnswerOption(data: AnswerOptionDto) {
+  async updateAnswerOption(data: Partial<AnswerOptionDto>) {
     return await this.prisma.answerOption.update({
       where: { id: data.id },
       data: {

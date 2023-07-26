@@ -208,12 +208,15 @@ export class PollsController {
   @Patch('invite-people')
   @UseInterceptors(new TransformDtoInterceptor(PollDto))
   @UseGuards(PollAuthorGuard)
-  async updateInvitePeople(@Req() req: Request, @Body() body: InviteUsersDto) {
+  async updateInvitePeople(
+    @Req() req: Request,
+    @Body() inviteUsersDto: InviteUsersDto,
+  ) {
     const poll: PollDto = req['poll'];
     if (poll.status !== PollStatus.ongoing) {
       throw new BadRequestException(MSG_POLL_STATUS_MUST_ONGOING);
     }
-    return await this.pollsService.updateInvitePeople(poll, body.invitedUsers);
+    return await this.pollsService.updateInvitePeople(poll, inviteUsersDto);
   }
 
   @Patch(':pollId/start-now')

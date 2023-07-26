@@ -63,8 +63,9 @@ export class CreatePollDto {
   @ApiProperty({ required: false, default: false })
   isPublic?: boolean = false;
 
-  @IsNumber({}, { each: true })
   @ArrayMinSize(1)
+  @ValidateIf((e) => !e.groupList)
+  @IsNumber({}, { each: true })
   @IsArray()
   @Transform((item) => item.value.map((v) => Number(v)))
   @ValidateIf((e) => e.isPublic === false)
@@ -79,4 +80,11 @@ export class CreatePollDto {
   @IsOptional()
   @ApiProperty({ required: false, type: [RequestAnswerOption] })
   answerOptions?: RequestAnswerOption[] = [];
+
+  @IsNumber({}, { each: true })
+  @IsArray()
+  @Transform((item) => item.value.map((v) => Number(v)))
+  @IsOptional()
+  @ApiProperty({ required: false, type: [Number] })
+  groupList?: number[];
 }

@@ -49,8 +49,14 @@ export class GroupsController {
   @Patch(':groupId')
   @UseGuards(GroupCreatorGuard)
   @UseInterceptors(new TransformDtoInterceptor(GroupDto))
-  async updateGroup(@Body() updateGroupDto: UpdateGroupDto) {
-    const updatedGroup = await this.groupsService.updateGroup(updateGroupDto);
+  async updateGroup(
+    @Param('groupId', ParseIntPipe) groupId: number,
+    @Body() updateGroupDto: UpdateGroupDto,
+  ) {
+    const updatedGroup = await this.groupsService.updateGroup(
+      groupId,
+      updateGroupDto,
+    );
     return {
       message: MSG_UPDATE_SUCCESSFUL,
       data: updatedGroup,

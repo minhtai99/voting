@@ -1,11 +1,17 @@
 import {
   MSG_DELETE_GROUP_SUCCESSFUL,
   MSG_GROUP_NAME_ALREADY_EXISTS,
+  MSG_GROUP_NOT_FOUND,
 } from './../constants/message.constant';
 import { CrudService } from './../crud/crud.service';
 import { GROUP_CACHE_KEY } from './../constants/cache.constant';
 import { PrismaService } from './../prisma/prisma.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -46,10 +52,10 @@ export class GroupsService extends CrudService {
     return await this.createData(args);
   }
 
-  async updateGroup(updateGroupDto: UpdateGroupDto) {
+  async updateGroup(groupId: number, updateGroupDto: UpdateGroupDto) {
     const args = {
       where: {
-        id: updateGroupDto.groupId,
+        id: groupId,
       },
       data: {
         members: {
@@ -67,13 +73,17 @@ export class GroupsService extends CrudService {
   }
 
   async findGroupById(groupId: number) {
-    return await this.getDataByUnique(
+    const group = await this.getDataByUnique(
       { id: groupId },
       {
         creator: true,
         members: true,
       },
     );
+    if (!group) {
+      throw new NotFoundException(MSG_GROUP_NOT_FOUND);
+    }
+    return group;
   }
 
   async deleteGroup(groupId: number) {
@@ -89,5 +99,18 @@ export class GroupsService extends CrudService {
         members: true,
       },
     );
+  }
+
+  async getGroupListByGroupIdList(groupIdList: number[]) {
+    return await this.prisma.group.findMany({
+      where: {
+        id: {
+          in: groupIdList,
+        },
+      },
+      include: {
+        members: true,
+      },
+    });
   }
 }
