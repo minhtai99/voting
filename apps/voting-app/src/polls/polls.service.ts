@@ -218,10 +218,10 @@ export class PollsService extends CrudService {
 
       const payloadInvitation: MailInvitationVote = {
         pollId: poll.id,
-        invitedUsers: newInvitedUsers,
+        newInvitedUsers: newInvitedUsers,
       };
       this.eventEmitter.emit(
-        MailEvent.SEND_MAIL_ADD_INVITATION_VOTE,
+        MailEvent.SEND_MAIL_INVITATION_VOTE,
         payloadInvitation,
       );
 

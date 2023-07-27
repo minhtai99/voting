@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import Mail from 'nodemailer/lib/mailer';
 
 export class SendMailDto {
   @IsString()
@@ -19,10 +20,10 @@ export class SendMailDto {
   @IsString()
   @IsOptional()
   @ApiProperty()
-  fileName: string;
+  template?: string;
 
   @IsString()
   @IsOptional()
   @ApiProperty()
-  pathFile: string;
+  attachments?: Mail.Attachment[];
 }

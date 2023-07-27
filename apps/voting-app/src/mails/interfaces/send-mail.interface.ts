@@ -1,3 +1,4 @@
+import Mail from 'nodemailer/lib/mailer';
 import { UserDto } from '../../users/dto/user.dto';
 
 export interface MailForgotPassPayload {
@@ -7,7 +8,7 @@ export interface MailForgotPassPayload {
 
 export interface MailInvitationVote {
   pollId: number;
-  invitedUsers?: number[];
+  newInvitedUsers?: number[];
 }
 
 export interface VoteExcel {
@@ -29,6 +30,5 @@ export interface SendMail {
   to: string;
   subject: string;
   context: object;
-  fileName?: string;
-  pathFile?: string;
+  attachments?: Mail.Attachment[];
 }

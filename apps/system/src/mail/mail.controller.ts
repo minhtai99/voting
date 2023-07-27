@@ -1,34 +1,46 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { MailService } from './mail.service';
 import { SendMailDto } from './dto/send-mail.dto';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { ProcessorName } from './mail.enum';
 
 @Controller()
 export class MailController {
-  constructor(private readonly mailService: MailService) {}
+  constructor(
+    @InjectQueue('send-email') private readonly sendEmailQueue: Queue,
+  ) {}
 
   @EventPattern('sendMailForgotPass')
-  handleSendMailForgotPass(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMail(sendMailDto, './forgot-password.hbs');
+  async handleSendMailForgotPass(@Payload() sendMailDto: SendMailDto) {
+    sendMailDto.template = './forgot-password.hbs';
+    await this.sendEmailQueue.add(ProcessorName.SEND_EMAIL, sendMailDto);
   }
 
   @EventPattern('sendMailInvitation')
-  handleSendMailInvitation(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMail(sendMailDto, './invitation-vote.hbs');
+  async handleSendMailInvitation(@Payload() sendMailDto: SendMailDto) {
+    sendMailDto.template = './invitation-vote.hbs';
+    await this.sendEmailQueue.add(ProcessorName.SEND_EMAIL, sendMailDto);
   }
 
   @EventPattern('sendMailReminder')
-  handleSendMailReminder(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMail(sendMailDto, './vote-reminder.hbs');
-  }
-
-  @EventPattern('sendMailPollEndedAuthor')
-  handleSendMailEndPollAuthor(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMailWithFile(sendMailDto, './end-poll-author.hbs');
+  async handleSendMailReminder(@Payload() sendMailDto: SendMailDto) {
+    sendMailDto.template = './vote-reminder.hbs';
+    await this.sendEmailQueue.add(ProcessorName.SEND_EMAIL, sendMailDto);
   }
 
   @EventPattern('sendMailPollEndedParticipants')
-  handleSendMailEndPollParticipant(@Payload() sendMailDto: SendMailDto) {
-    this.mailService.sendMail(sendMailDto, './end-poll-participant.hbs');
+  async handleSendMailEndPollParticipant(@Payload() sendMailDto: SendMailDto) {
+    sendMailDto.template = './end-poll-participant.hbs';
+    await this.sendEmailQueue.add(ProcessorName.SEND_EMAIL, sendMailDto);
+  }
+
+  @EventPattern('sendMailPollEndedAuthor')
+  async handleSendMailEndPollAuthor(@Payload() sendMailDto: SendMailDto) {
+    sendMailDto.template = './end-poll-author.hbs';
+    await this.sendEmailQueue.add(
+      ProcessorName.SEND_EMAIL_WITH_FILE,
+      sendMailDto,
+    );
   }
 }

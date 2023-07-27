@@ -1,10 +1,11 @@
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
-import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { MailProcessor } from './mail.processor';
 
 @Module({
   imports: [
@@ -35,8 +36,11 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
       }),
       inject: [ConfigService],
     }),
+    BullModule.registerQueue({
+      name: 'send-email',
+    }),
   ],
   controllers: [MailController],
-  providers: [MailService],
+  providers: [MailProcessor],
 })
 export class MailModule {}

@@ -4,8 +4,6 @@ import { MailsService } from './mails.service';
 import { MailListener } from './listeners/mail.listener';
 import { FilesModule } from '../files/files.module';
 import { UsersModule } from './../users/users.module';
-import { BullModule } from '@nestjs/bull';
-import { MailProcessor } from './mail.processor';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
@@ -15,16 +13,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     PollsModule,
     FilesModule,
     UsersModule,
-    BullModule.registerQueue({
-      name: 'send-email',
-    }),
     JwtModule.register({}),
     ClientsModule.register([
       { name: 'MAIL_SERVICE', transport: Transport.TCP },
     ]),
   ],
   controllers: [],
-  providers: [MailsService, MailListener, MailProcessor],
+  providers: [MailsService, MailListener],
   exports: [MailsService, MailListener],
 })
 export class MailsModule {}
