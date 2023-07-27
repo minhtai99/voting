@@ -34,7 +34,7 @@ import { AnswerOptionService } from '../answer-option/answer-option.service';
 import { PostPollDto } from './dto/post-poll.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { CrudService } from 'src/crud/crud.service';
+import { CrudService } from './../crud/crud.service';
 import { InviteUsersDto } from './dto/invite-user.dto';
 
 @Injectable()
@@ -218,10 +218,10 @@ export class PollsService extends CrudService {
 
       const payloadInvitation: MailInvitationVote = {
         pollId: poll.id,
-        invitedUsers: newInvitedUsers,
+        newInvitedUsers: newInvitedUsers,
       };
       this.eventEmitter.emit(
-        MailEvent.SEND_MAIL_ADD_INVITATION_VOTE,
+        MailEvent.SEND_MAIL_INVITATION_VOTE,
         payloadInvitation,
       );
 
@@ -244,11 +244,6 @@ export class PollsService extends CrudService {
   }
 
   async getPollById(pollId: number) {
-    const poll: PollDto = await this.findPollById(pollId);
-    return { data: poll };
-  }
-
-  async findPollById(pollId: number) {
     const include = {
       _count: true,
       author: true,
@@ -267,7 +262,32 @@ export class PollsService extends CrudService {
         },
       },
     };
-    return await this.getDataByUnique({ id: pollId }, include);
+    const poll = await this.getDataByUnique({ id: pollId }, include);
+    return { data: poll };
+  }
+
+  async findPollById(pollId: number) {
+    return await this.prisma.poll.findUnique({
+      where: { id: pollId },
+      include: {
+        _count: true,
+        author: true,
+        answerOptions: {
+          include: {
+            _count: {
+              select: { votes: true },
+            },
+          },
+        },
+        invitedUsers: true,
+        votes: {
+          include: {
+            participant: true,
+            answers: true,
+          },
+        },
+      },
+    });
   }
 
   formatPollDto(pollDto: Partial<PostPollDto>, backgroundUrl: string | null) {

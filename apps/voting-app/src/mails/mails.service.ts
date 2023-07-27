@@ -1,14 +1,15 @@
 import { PathUrl, createPollToken, getTokenUrl } from '../helpers/token.helper';
 import { UsersService } from './../users/users.service';
-import { PollDto } from 'src/polls/dto/poll.dto';
 import { PollsService } from './../polls/polls.service';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UserDto } from '../users/dto/user.dto';
 import { FilesService } from '../files/files.service';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
-import { ProcessorName } from './mails.enum';
+import { MailClientEvent } from './mails.enum';
 import { JwtService } from '@nestjs/jwt';
+import { ClientProxy } from '@nestjs/microservices';
+import { MailInvitationVote, SendMail } from './interfaces/send-mail.interface';
+import { AnswerType } from '@prisma/client';
+import { join } from 'path';
 
 @Injectable()
 export class MailsService {
@@ -17,67 +18,108 @@ export class MailsService {
     private readonly usersService: UsersService,
     private readonly filesService: FilesService,
     private readonly jwtService: JwtService,
-    @InjectQueue('send-email') private readonly sendEmailQueue: Queue,
+    @Inject('MAIL_SERVICE') private readonly mailClient: ClientProxy,
   ) {}
 
   async sendEmailForgotPass(receiver: UserDto, token: string) {
     const url = getTokenUrl(token, PathUrl.FORGOT_PASSWORD);
-    await this.sendEmailQueue.add(ProcessorName.FORGOT_PASSWORD, {
-      url,
-      receiver,
-    });
+    const payload: SendMail = {
+      to: receiver.email,
+      subject: 'Reset Your Password',
+      context: {
+        url,
+      },
+    };
+    this.mailClient.emit(MailClientEvent.SEND_MAIL_FORGOT_PASSWORD, payload);
   }
 
-  async sendEmailStartedPoll(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+  async sendEmailInvitePeople(payload: MailInvitationVote) {
+    const poll = await this.pollsService.findPollById(payload.pollId);
     const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
-    poll.invitedUsers.forEach(
-      async (receiver) =>
-        await this.sendEmailQueue.add(ProcessorName.INVITATION_VOTE, {
-          url,
-          receiver,
-          poll,
-        }),
-    );
-  }
+    let invitationList = poll.invitedUsers;
+    if (payload.newInvitedUsers) {
+      invitationList = invitationList.filter((user) =>
+        payload.newInvitedUsers.find((userId) => userId === user.id),
+      );
+    }
 
-  async sendEmailInvitePeople(pollId: number, newInvitedUsers: number[]) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
-    const token = createPollToken(this.jwtService, poll.id);
-    const url = getTokenUrl(token, PathUrl.VOTE);
-
-    poll.invitedUsers.forEach(async (receiver) => {
-      if (newInvitedUsers.some((userId) => userId === receiver.id)) {
-        await this.sendEmailQueue.add(ProcessorName.INVITATION_VOTE, {
+    invitationList.forEach(async (receiver) => {
+      const payload: SendMail = {
+        to: receiver.email,
+        subject: `[Invitation] ${poll.title}`,
+        context: {
           url,
-          receiver,
-          poll,
-        });
-      }
+          receiver: receiver.firstName + ' ' + receiver.lastName,
+          author: poll.author.firstName + ' ' + poll.author.lastName,
+          question: poll.question,
+          endTime: poll.endDate,
+        },
+      };
+      this.mailClient.emit(MailClientEvent.SEND_MAIL_INVITATION_VOTE, payload);
     });
   }
 
   async sendEmailPollEndedParticipants(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
 
     poll.votes.forEach(async (vote) => {
-      await this.sendEmailQueue.add(ProcessorName.POLL_ENDED_PARTICIPANT, {
-        vote,
-        poll,
-      });
+      let participantAnswer: string[] | string;
+      if (poll.answerType === AnswerType.checkbox) {
+        participantAnswer = vote.answers.map((answerOption) => {
+          return answerOption.content;
+        });
+      } else {
+        participantAnswer = vote.input ?? vote.answers[0].content;
+      }
+
+      const payload: SendMail = {
+        to: vote.participant.email,
+        subject: `[Result] ${poll.title}`,
+        context: {
+          question: poll.question,
+          receiver:
+            vote.participant.firstName + ' ' + vote.participant.lastName,
+          author: poll.author.firstName + ' ' + poll.author.lastName,
+          isArrayAnswer: poll.answerType === AnswerType.checkbox ? true : false,
+          participantAnswer,
+          isPollResult: poll.answerType === AnswerType.input ? false : true,
+          answerOptions: poll.answerOptions.sort(
+            (a: any, b: any) => b._count.votes - a._count.votes,
+          ),
+        },
+      };
+      this.mailClient.emit(
+        MailClientEvent.SEND_MAIL_POLL_ENDED_PARTICIPANT,
+        payload,
+      );
     });
   }
 
   async sendEmailPollEndedAuthor(pollId: number) {
-    const poll: PollDto = await this.pollsService.findPollById(pollId);
+    const poll = await this.pollsService.findPollById(pollId);
 
-    const excelFile = await this.filesService.exportDataToBuffer(pollId);
+    const fileName = await this.filesService.exportDataToFile(pollId);
 
-    await this.sendEmailQueue.add(ProcessorName.POLL_ENDED_AUTHOR, {
-      excelFile,
-      poll,
-    });
+    const payload: SendMail = {
+      to: poll.author.email,
+      subject: `[Result] ${poll.title}`,
+      attachments: [
+        {
+          filename: fileName,
+          path: join(__dirname, '../../', fileName),
+        },
+      ],
+      context: {
+        question: poll.question,
+        author: poll.author.firstName + ' ' + poll.author.lastName,
+        isPollResult: poll.answerType === AnswerType.input ? false : true,
+        answerOptions: poll.answerOptions.sort(
+          (a: any, b: any) => b._count.votes - a._count.votes,
+        ),
+      },
+    };
+    this.mailClient.emit(MailClientEvent.SEND_MAIL_POLL_ENDED_AUTHOR, payload);
   }
 
   async sendEmailVoteReminder(pollId: number) {
@@ -89,13 +131,19 @@ export class MailsService {
     const poll = voteReminderList[0].invitedPolls[0];
     const token = createPollToken(this.jwtService, poll.id);
     const url = getTokenUrl(token, PathUrl.VOTE);
-    voteReminderList.forEach(
-      async (receiver) =>
-        await this.sendEmailQueue.add(ProcessorName.VOTE_REMINDER, {
+    voteReminderList.forEach(async (receiver) => {
+      const payload: SendMail = {
+        to: receiver.email,
+        subject: `[Reminder] ${poll.title}`,
+        context: {
           url,
-          receiver,
-          poll,
-        }),
-    );
+          receiver: receiver.firstName + ' ' + receiver.lastName,
+          author: poll.author.firstName + ' ' + poll.author.lastName,
+          question: poll.question,
+          endTime: poll.endDate,
+        },
+      };
+      this.mailClient.emit(MailClientEvent.SEND_MAIL_VOTE_REMINDER, payload);
+    });
   }
 }

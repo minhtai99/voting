@@ -1,4 +1,4 @@
-import { VoteDto } from 'src/votes/dto/vote.dto';
+import { VoteDto } from './../votes/dto/vote.dto';
 import { TransformDtoInterceptor } from './../interceptors/transform-dto.interceptor';
 import { MSG_VOTE_NOT_FOUND } from '../constants/message.constant';
 import { UserDto } from '../users/dto/user.dto';
@@ -22,7 +22,7 @@ import { User } from '../decorators/user.decorator';
 import { VoteGuard } from './vote.guard';
 import { Request } from 'express';
 import { FilterVoteDto } from './dto/filter-vote.dto';
-import { PollDto } from 'src/polls/dto/poll.dto';
+import { PollDto } from './../polls/dto/poll.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vote')

@@ -1,4 +1,4 @@
-import { PollDto } from 'src/polls/dto/poll.dto';
+import { PollDto } from './../../polls/dto/poll.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { Vote } from '@prisma/client';
 import { AnswerOptionDto } from '../../answer-option/dto/answer-option.dto';
