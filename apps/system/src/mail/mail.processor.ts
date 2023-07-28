@@ -12,7 +12,7 @@ export class MailProcessor {
   private readonly logger = new Logger(MailProcessor.name);
 
   @Process(ProcessorName.SEND_EMAIL)
-  async sendEmailForgotPass(job: Job) {
+  async sendEmail(job: Job) {
     const sendMailDto: SendMailDto = job.data;
     await this.mailerService.sendMail({
       to: sendMailDto.to,
@@ -23,7 +23,7 @@ export class MailProcessor {
   }
 
   @Process(ProcessorName.SEND_EMAIL_WITH_FILE)
-  async sendEmailInvitationVote(job: Job) {
+  async sendEmailWithFile(job: Job) {
     const sendMailDto: SendMailDto = job.data;
     await this.mailerService.sendMail({
       to: sendMailDto.to,
