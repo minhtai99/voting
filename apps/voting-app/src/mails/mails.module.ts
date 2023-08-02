@@ -15,7 +15,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     UsersModule,
     JwtModule.register({}),
     ClientsModule.register([
-      { name: 'MAIL_SERVICE', transport: Transport.TCP },
+      {
+        name: 'MAIL_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.MAIL_SERVER_URL,
+        },
+      },
     ]),
   ],
   controllers: [],
