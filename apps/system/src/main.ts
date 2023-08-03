@@ -7,6 +7,10 @@ async function bootstrap() {
     SystemModule,
     {
       transport: Transport.TCP,
+      options: {
+        host: process.env.API_SERVER_URL,
+        port: +process.env.PORT,
+      },
     },
   );
   await app.listen();

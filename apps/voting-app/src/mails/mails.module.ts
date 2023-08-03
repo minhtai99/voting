@@ -20,6 +20,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         transport: Transport.TCP,
         options: {
           host: process.env.MAIL_SERVER_URL,
+          port: +process.env.PORT,
         },
       },
     ]),
